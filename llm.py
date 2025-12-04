@@ -28,6 +28,16 @@ from dataclasses import asdict
 from typing import List, Literal, Optional
 
 from models import Post
+from config import (
+    OPENAI_MODEL,
+    TEMPERATURE,
+    MAX_TOKENS,
+    TIMEOUT_S,
+    MAX_INPUT_CHARS,
+    OPENAI_API_KEY,
+    configure_logging,
+    record_llm_latency,
+)
 
 try:
     # LangChain for OpenAI chat models and structured output
@@ -43,12 +53,7 @@ except Exception:  # pragma: no cover
 logger = logging.getLogger(__name__)
 
 
-# Config constants
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-TEMPERATURE = 0.0
-MAX_TOKENS = 120
-TIMEOUT_S = 10
-MAX_INPUT_CHARS = 1200
+# Config constants imported from centralized config
 
 
 # Prefilter rules
@@ -166,6 +171,7 @@ def _invoke_llm(clean_text: str) -> StructuredLLMResult:
         temperature=TEMPERATURE,
         max_tokens=MAX_TOKENS,
         timeout=TIMEOUT_S,  # supported in recent langchain-openai
+        api_key=OPENAI_API_KEY,
     )
 
     # Use with_structured_output with our Pydantic model
@@ -228,9 +234,18 @@ def analyze(post: Post) -> dict:
             "summary": summary_note,
         }
 
+    # Safe skip when API key is missing (Task 24)
+    if not OPENAI_API_KEY:
+        logger.info("OPENAI_API_KEY not set; skipping LLM analysis safely")
+        return _default_fallback("[skipped: missing_openai_api_key]")
+
     # First attempt
     try:
+        import time
+        _t0 = time.perf_counter()
         result = _invoke_llm(clean_text)
+        _t1 = time.perf_counter()
+        record_llm_latency(_t1 - _t0, succeeded=True)
         # Convert Pydantic model to dict in a stable shape
         return {
             "is_valid": bool(result.is_valid),
@@ -241,13 +256,26 @@ def analyze(post: Post) -> dict:
     except Exception as e:
         msg = str(e).lower()
         is_timeout = "timeout" in msg or "timed out" in msg
+        # Record failed attempt latency if available
+        try:
+            _t1
+            _t0
+        except NameError:
+            _t0 = None
+            _t1 = None
+        if isinstance(_t0, float) and isinstance(_t1, float) and _t1 >= _t0:
+            record_llm_latency(_t1 - _t0, succeeded=False)
         if not is_timeout:
             logger.warning("LLM call failed (non-timeout): %s", e)
             return _default_fallback("[skipped: llm_error]")
 
     # Retry once for timeouts only
     try:
+        import time
+        _r0 = time.perf_counter()
         result = _invoke_llm(clean_text)
+        _r1 = time.perf_counter()
+        record_llm_latency(_r1 - _r0, succeeded=True)
         return {
             "is_valid": bool(result.is_valid),
             "sentiment": str(result.sentiment),
@@ -255,6 +283,14 @@ def analyze(post: Post) -> dict:
             "summary": str(result.summary or "").strip(),
         }
     except Exception as e2:
+        try:
+            _r1
+            _r0
+        except NameError:
+            _r0 = None
+            _r1 = None
+        if isinstance(_r0, float) and isinstance(_r1, float) and _r1 >= _r0:
+            record_llm_latency(_r1 - _r0, succeeded=False)
         logger.warning("LLM timeout retry failed: %s", e2)
         return _default_fallback("[skipped: llm_timeout]")
 
@@ -276,11 +312,8 @@ def _cli_make_post(text: str) -> Post:
 
 
 def _configure_root_logger() -> None:
-    if not logging.getLogger().handlers:
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
-        )
+    # Delegate to centralized config
+    configure_logging()
 
 
 if __name__ == "__main__":

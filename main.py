@@ -22,21 +22,23 @@ from collectors.reddit import fetch_posts_as_models
 from llm import analyze
 from db import save_post, exists_content_hash
 from models import Post
+from config import (
+    MAX_PARALLEL_LLM,
+    configure_logging,
+    perf_start_sample,
+    get_perf_stats,
+)
 
 
-# Constants
-MAX_PARALLEL_LLM = 8
+# Constants imported from centralized config
 
 
 logger = logging.getLogger(__name__)
 
 
 def _configure_root_logger() -> None:
-    if not logging.getLogger().handlers:
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
-        )
+    # Delegate to centralized config
+    configure_logging()
 
 
 def _parse_args() -> argparse.Namespace:
@@ -115,6 +117,8 @@ def main() -> int:
     analyzed_count = 0
 
     if to_analyze:
+        # Start performance sampling window at up to 300 attempts
+        perf_start_sample(limit=min(300, len(to_analyze)))
         try:
             results = asyncio.run(_run_llm_with_limit(to_analyze))
         except Exception as exc:
@@ -148,6 +152,14 @@ def main() -> int:
     total_collected = reddit_collected
     total_saved = saved_ok
     print(f"  total: collected={total_collected}, saved={total_saved}")
+
+    # Performance stats (Task 25)
+    stats = get_perf_stats()
+    if stats.get("attempts", 0) > 0:
+        print("Perf:")
+        print(
+            f"  avg_latency_s={stats['avg_latency_s']}, total_wall_time_s={stats['total_wall_time_s']}, attempts={int(stats['attempts'])}, failure_ratio={stats['failure_ratio']}"
+        )
 
     return 0
 
