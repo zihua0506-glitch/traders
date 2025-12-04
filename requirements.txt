@@ -1,0 +1,12 @@
+# Reddit API client
+praw>=7.7.0
+
+# Database ORM
+peewee>=3.17.0
+
+# LangChain for LLM integration
+langchain>=0.2.0
+langchain-openai>=0.1.0
+
+# Pydantic for structured output
+pydantic>=2.0.0
