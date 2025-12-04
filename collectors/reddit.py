@@ -11,6 +11,9 @@ import os
 import time
 from typing import List
 
+# Models
+from models import Post
+
 try:
     import praw  # type: ignore
 except Exception:  # pragma: no cover - import-time environment varies
@@ -97,6 +100,63 @@ def fetch_posts(hours: int) -> List["praw.models.Submission"]:
                 break
 
     return collected
+
+
+def _submission_to_post(submission: "praw.models.Submission") -> Post:
+    """Map a PRAW Submission to a normalized Post dataclass.
+
+    Field mapping rules (per spec):
+    - content: title + body (selftext)
+    - source: constant 'reddit'
+    - source_id: submission.id
+    - source_url: prefer permalink; fallback to submission.url
+    - post_time: submission.created_utc
+    - likes: submission.score
+    - comments: submission.num_comments
+    - shares: 0 (no Reddit concept)
+    - author_id/author_name: from submission.author (handle None)
+    """
+
+    title = getattr(submission, "title", "") or ""
+    body = getattr(submission, "selftext", "") or ""
+    content = f"{title}\n\n{body}".strip()
+
+    # Prefer a canonical reddit permalink if available
+    permalink = getattr(submission, "permalink", None)
+    if permalink:
+        if not str(permalink).startswith("http"):
+            source_url = f"https://www.reddit.com{permalink}"
+        else:
+            source_url = str(permalink)
+    else:
+        source_url = str(getattr(submission, "url", ""))
+
+    author = getattr(submission, "author", None)
+    author_id = getattr(author, "id", "") if author is not None else ""
+    author_name = getattr(author, "name", "") if author is not None else "[deleted]"
+
+    return Post(
+        source="reddit",
+        source_id=str(getattr(submission, "id", "")),
+        source_url=source_url,
+        content=content,
+        author_id=str(author_id) if author_id is not None else "",
+        author_name=str(author_name),
+        post_time=int(getattr(submission, "created_utc", 0) or 0),
+        likes=int(getattr(submission, "score", 0) or 0),
+        comments=int(getattr(submission, "num_comments", 0) or 0),
+        shares=0,
+    )
+
+
+def fetch_posts_as_models(hours: int) -> List[Post]:
+    """Fetch recent submissions and map them to Post models.
+
+    Keeps `fetch_posts` behavior intact for callers that need raw PRAW objects,
+    while providing a normalized `Post` list for downstream processing.
+    """
+    raw = fetch_posts(hours)
+    return [_submission_to_post(s) for s in raw]
 
 
 if __name__ == "__main__":
