@@ -9,7 +9,8 @@ from __future__ import annotations
 
 import os
 import time
-from typing import List
+from typing import List, Tuple
+import logging
 
 # Models
 from models import Post
@@ -19,6 +20,9 @@ try:
 except Exception:  # pragma: no cover - import-time environment varies
     praw = None  # type: ignore
 
+
+# Logger
+logger = logging.getLogger(__name__)
 
 # Target subreddit communities to collect from.
 SUBREDDITS = [
@@ -83,21 +87,34 @@ def fetch_posts(hours: int) -> List["praw.models.Submission"]:
     now_ts = int(time.time())
     since_ts = now_ts - hours * 3600
 
-    reddit = _make_reddit_client()
+    # Build client defensively; on failure, log and return empty collection
+    try:
+        reddit = _make_reddit_client()
+    except Exception as exc:
+        logger.error("Failed to initialize Reddit client: %s", exc, exc_info=True)
+        return []
 
     collected: List["praw.models.Submission"] = []
     for name in SUBREDDITS:
-        subreddit = reddit.subreddit(name)
-        # Iterate newest-to-oldest; break early once outside the window.
-        for submission in subreddit.new(limit=1000):
-            created = getattr(submission, "created_utc", None)
-            if created is None:
-                continue
-            if int(created) >= since_ts:
-                collected.append(submission)
-            else:
-                # Listing is newest-first; once older than window, move to next subreddit
-                break
+        try:
+            subreddit = reddit.subreddit(name)
+            # Iterate newest-to-oldest; break early once outside the window.
+            for submission in subreddit.new(limit=1000):
+                created = getattr(submission, "created_utc", None)
+                if created is None:
+                    continue
+                if int(created) >= since_ts:
+                    collected.append(submission)
+                else:
+                    # Listing is newest-first; once older than window, move to next subreddit
+                    break
+        except Exception as exc:
+            # Capture network/API errors per-subreddit without interrupting the loop
+            logger.error(
+                "Error collecting from subreddit '%s': %s", name, exc, exc_info=True
+            )
+            # Continue to next subreddit
+            continue
 
     return collected
 
@@ -149,14 +166,19 @@ def _submission_to_post(submission: "praw.models.Submission") -> Post:
     )
 
 
-def fetch_posts_as_models(hours: int) -> List[Post]:
+def fetch_posts_as_models(hours: int) -> Tuple[List[Post], int]:
     """Fetch recent submissions and map them to Post models.
+
+    Returns a tuple of (`posts`, `total_count`) to make the collector's
+    statistics explicit for downstream aggregation.
 
     Keeps `fetch_posts` behavior intact for callers that need raw PRAW objects,
     while providing a normalized `Post` list for downstream processing.
     """
     raw = fetch_posts(hours)
-    return [_submission_to_post(s) for s in raw]
+    posts = [_submission_to_post(s) for s in raw]
+    # Return explicit statistics (total count) alongside the models
+    return posts, len(posts)
 
 
 if __name__ == "__main__":
@@ -178,11 +200,18 @@ if __name__ == "__main__":
     print(f"Target subreddits: {', '.join(SUBREDDITS)}")
     print(f"Hours window: {args.hours}")
 
+    # Configure a basic logger for CLI use if not already configured
+    if not logging.getLogger().handlers:
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+        )
+
     try:
         submissions = fetch_posts(args.hours)
-    except Exception as exc:  # keep CLI resilient for quick validation
-        print(f"Error collecting posts: {exc}", file=sys.stderr)
-        sys.exit(1)
+    except Exception as exc:  # Additional guard; should not trigger after above changes
+        logger.error("Collector error: %s", exc, exc_info=True)
+        submissions = []
 
     total = len(submissions)
     # Per-subreddit breakdown for easier validation
