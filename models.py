@@ -48,3 +48,45 @@ class Post:
 
 __all__ = ["Post"]
 
+
+if __name__ == "__main__":
+    # Simple duplicate-set test: two posts with identical content
+    sample_content = (
+        "Apple releases new iPhone; investors react positively to features."
+    )
+
+    post_a = Post(
+        source="reddit",
+        source_id="r1",
+        source_url="https://reddit.com/r/stocks/abc",
+        content=sample_content,
+        author_id="u123",
+        author_name="Alice",
+        post_time=1733333333,
+        likes=10,
+        comments=2,
+        shares=1,
+    )
+
+    post_b = Post(
+        source="twitter",
+        source_id="t1",
+        source_url="https://twitter.com/user/status/xyz",
+        content=sample_content,
+        author_id="u456",
+        author_name="Bob",
+        post_time=1733333399,
+        likes=8,
+        comments=1,
+        shares=0,
+    )
+
+    hash_a = post_a.content_hash
+    hash_b = post_b.content_hash
+
+    print(f"hash_a={hash_a}")
+    print(f"hash_b={hash_b}")
+    print(f"equal={hash_a == hash_b}")
+
+    assert hash_a == hash_b, "Content hashes should match for identical content"
+    print("Duplicate content hash match: OK")
