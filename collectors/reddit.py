@@ -1,24 +1,24 @@
 """Reddit collector module.
 
 This module defines constants and utilities to collect posts from
-predefined subreddits. Implements time-window filtering via
-``fetch_posts(hours: int)`` using the PRAW library.
+predefined subreddits. Uses direct .json endpoint requests (no API key required).
+
+Based on YARS (Yet Another Reddit Scraper) approach.
 """
 
 from __future__ import annotations
 
-import os
+import json
+import logging
+import random
 import time
 from typing import List, Tuple
-import logging
 
-# Models
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
 from models import Post
-
-try:
-    import praw  # type: ignore
-except Exception:  # pragma: no cover - import-time environment varies
-    praw = None  # type: ignore
 
 
 # Logger
@@ -31,153 +31,232 @@ SUBREDDITS = [
     "investing",
 ]
 
+# Random user agents to avoid detection
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+]
 
-def _make_reddit_client() -> "praw.Reddit":
-    """Create and return a authenticated PRAW Reddit client.
+# Configuration
+REQUEST_TIMEOUT = 15
+MAX_POSTS_PER_REQUEST = 100
+RATE_LIMIT_DELAY = (1.0, 2.0)  # Random delay range in seconds
 
-    Reads credentials from environment variables:
-    - `REDDIT_CLIENT_ID`
-    - `REDDIT_CLIENT_SECRET`
-    - `REDDIT_USER_AGENT` (optional)
 
-    Raises a RuntimeError when PRAW is not installed or credentials are missing.
+class RedditScraper:
+    """Reddit scraper using public .json endpoints (no API key required).
+
+    This is a YARS-style implementation that scrapes Reddit without
+    requiring official API credentials.
     """
 
-    if praw is None:
-        raise RuntimeError(
-            "praw is not installed. Please install 'praw' to use the Reddit collector."
+    def __init__(self, timeout: int = REQUEST_TIMEOUT):
+        self.timeout = timeout
+        self.session = requests.Session()
+        self.session.headers.update({
+            "User-Agent": random.choice(USER_AGENTS),
+            "Accept": "application/json",
+        })
+
+        # Configure retries for resilience
+        retries = Retry(
+            total=3,
+            backoff_factor=2,
+            status_forcelist=[429, 500, 502, 503, 504],
         )
+        self.session.mount("https://", HTTPAdapter(max_retries=retries))
 
-    client_id = os.getenv("REDDIT_CLIENT_ID")
-    client_secret = os.getenv("REDDIT_CLIENT_SECRET")
-    user_agent = os.getenv(
-        "REDDIT_USER_AGENT", "sentiment-collector/0.1 (+https://example.invalid)"
-    )
+    def fetch_subreddit_posts(
+        self,
+        subreddit: str,
+        limit: int = 100,
+        category: str = "new",
+        time_filter: str = "all",
+        since_ts: int = 0,
+    ) -> List[dict]:
+        """Fetch posts from a subreddit.
 
-    if not client_id or not client_secret:
-        raise RuntimeError(
-            "Missing Reddit API credentials. Set REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET."
-        )
+        Args:
+            subreddit: Subreddit name (without r/)
+            limit: Maximum number of posts to fetch
+            category: Sort category - "hot", "new", "top", "rising"
+            time_filter: Time filter for "top" - "hour", "day", "week", "month", "year", "all"
+            since_ts: Unix timestamp; only return posts created after this time
 
-    return praw.Reddit(
-        client_id=client_id,
-        client_secret=client_secret,
-        user_agent=user_agent,
-    )
+        Returns:
+            List of post dictionaries with raw Reddit data
+        """
+        url = f"https://www.reddit.com/r/{subreddit}/{category}.json"
+        params = {
+            "limit": min(MAX_POSTS_PER_REQUEST, limit),
+            "raw_json": 1,
+            "t": time_filter,
+        }
+
+        all_posts = []
+        after = None
+
+        while len(all_posts) < limit:
+            if after:
+                params["after"] = after
+
+            try:
+                response = self.session.get(url, params=params, timeout=self.timeout)
+                response.raise_for_status()
+            except requests.exceptions.RequestException as e:
+                logger.error("Request to r/%s failed: %s", subreddit, e)
+                break
+
+            try:
+                data = response.json()
+            except json.JSONDecodeError as e:
+                logger.error("JSON decode error for r/%s: %s", subreddit, e)
+                break
+
+            posts = data.get("data", {}).get("children", [])
+            if not posts:
+                break
+
+            for post in posts:
+                post_data = post.get("data", {})
+                created_utc = int(post_data.get("created_utc", 0))
+
+                # Time window filter: skip posts older than since_ts
+                if since_ts and created_utc < since_ts:
+                    # Posts are sorted newest first, so we can stop here
+                    return all_posts[:limit]
+
+                post_info = {
+                    "id": post_data.get("id", ""),
+                    "name": post_data.get("name", ""),
+                    "title": post_data.get("title", ""),
+                    "author": post_data.get("author", ""),
+                    "selftext": post_data.get("selftext", ""),
+                    "permalink": post_data.get("permalink", ""),
+                    "url": post_data.get("url", ""),
+                    "score": post_data.get("score", 0),
+                    "num_comments": post_data.get("num_comments", 0),
+                    "created_utc": created_utc,
+                    "subreddit": post_data.get("subreddit", ""),
+                }
+                all_posts.append(post_info)
+
+                if len(all_posts) >= limit:
+                    break
+
+            after = data.get("data", {}).get("after")
+            if not after:
+                break
+
+            # Rate limiting - be nice to Reddit
+            time.sleep(random.uniform(*RATE_LIMIT_DELAY))
+
+        return all_posts[:limit]
 
 
-def fetch_posts(hours: int) -> List["praw.models.Submission"]:
-    """Fetch submissions from configured subreddits within the last N hours.
+# Module-level scraper instance
+_scraper: RedditScraper | None = None
+
+
+def _get_scraper() -> RedditScraper:
+    """Get or create the module-level scraper instance."""
+    global _scraper
+    if _scraper is None:
+        _scraper = RedditScraper()
+    return _scraper
+
+
+def fetch_posts(hours: int) -> List[dict]:
+    """Fetch posts from configured subreddits within the last N hours.
 
     Args:
         hours: Positive integer number of hours to look back from now.
 
     Returns:
-        A list of PRAW `Submission` objects whose `created_utc` is within the
-        specified time window.
+        A list of raw post dictionaries from Reddit.
 
     Raises:
         ValueError: If `hours` is not a positive integer.
-        RuntimeError: If PRAW is not available or credentials are missing.
     """
-
     if not isinstance(hours, int) or hours <= 0:
         raise ValueError("hours must be a positive integer")
 
     now_ts = int(time.time())
     since_ts = now_ts - hours * 3600
 
-    # Build client defensively; on failure, log and return empty collection
-    try:
-        reddit = _make_reddit_client()
-    except Exception as exc:
-        logger.error("Failed to initialize Reddit client: %s", exc, exc_info=True)
-        return []
+    scraper = _get_scraper()
+    collected: List[dict] = []
 
-    collected: List["praw.models.Submission"] = []
     for name in SUBREDDITS:
         try:
-            subreddit = reddit.subreddit(name)
-            # Iterate newest-to-oldest; break early once outside the window.
-            for submission in subreddit.new(limit=1000):
-                created = getattr(submission, "created_utc", None)
-                if created is None:
-                    continue
-                if int(created) >= since_ts:
-                    collected.append(submission)
-                else:
-                    # Listing is newest-first; once older than window, move to next subreddit
-                    break
+            logger.info("Fetching posts from r/%s (since %d hours ago)", name, hours)
+            posts = scraper.fetch_subreddit_posts(
+                subreddit=name,
+                limit=1000,
+                category="new",
+                since_ts=since_ts,
+            )
+            collected.extend(posts)
+            logger.info("Collected %d posts from r/%s", len(posts), name)
         except Exception as exc:
-            # Capture network/API errors per-subreddit without interrupting the loop
             logger.error(
                 "Error collecting from subreddit '%s': %s", name, exc, exc_info=True
             )
-            # Continue to next subreddit
             continue
 
     return collected
 
 
-def _submission_to_post(submission: "praw.models.Submission") -> Post:
-    """Map a PRAW Submission to a normalized Post dataclass.
+def _raw_post_to_model(raw: dict) -> Post:
+    """Map a raw Reddit post dict to a normalized Post dataclass.
 
-    Field mapping rules (per spec):
-    - content: title + body (selftext)
+    Field mapping:
+    - content: title + selftext
     - source: constant 'reddit'
-    - source_id: submission.id
-    - source_url: prefer permalink; fallback to submission.url
-    - post_time: submission.created_utc
-    - likes: submission.score
-    - comments: submission.num_comments
+    - source_id: post id
+    - source_url: permalink
+    - post_time: created_utc
+    - likes: score
+    - comments: num_comments
     - shares: 0 (no Reddit concept)
-    - author_id/author_name: from submission.author (handle None)
+    - author_id: empty (not available without API)
+    - author_name: author username
     """
-
-    title = getattr(submission, "title", "") or ""
-    body = getattr(submission, "selftext", "") or ""
+    title = raw.get("title", "") or ""
+    body = raw.get("selftext", "") or ""
     content = f"{title}\n\n{body}".strip()
 
-    # Prefer a canonical reddit permalink if available
-    permalink = getattr(submission, "permalink", None)
-    if permalink:
-        if not str(permalink).startswith("http"):
-            source_url = f"https://www.reddit.com{permalink}"
-        else:
-            source_url = str(permalink)
+    permalink = raw.get("permalink", "")
+    if permalink and not permalink.startswith("http"):
+        source_url = f"https://www.reddit.com{permalink}"
     else:
-        source_url = str(getattr(submission, "url", ""))
-
-    author = getattr(submission, "author", None)
-    author_id = getattr(author, "id", "") if author is not None else ""
-    author_name = getattr(author, "name", "") if author is not None else "[deleted]"
+        source_url = permalink or raw.get("url", "")
 
     return Post(
         source="reddit",
-        source_id=str(getattr(submission, "id", "")),
+        source_id=str(raw.get("id", "")),
         source_url=source_url,
         content=content,
-        author_id=str(author_id) if author_id is not None else "",
-        author_name=str(author_name),
-        post_time=int(getattr(submission, "created_utc", 0) or 0),
-        likes=int(getattr(submission, "score", 0) or 0),
-        comments=int(getattr(submission, "num_comments", 0) or 0),
+        author_id="",  # Not available without API auth
+        author_name=str(raw.get("author", "[deleted]")),
+        post_time=int(raw.get("created_utc", 0)),
+        likes=int(raw.get("score", 0)),
+        comments=int(raw.get("num_comments", 0)),
         shares=0,
     )
 
 
 def fetch_posts_as_models(hours: int) -> Tuple[List[Post], int]:
-    """Fetch recent submissions and map them to Post models.
+    """Fetch recent posts and map them to Post models.
 
     Returns a tuple of (`posts`, `total_count`) to make the collector's
     statistics explicit for downstream aggregation.
-
-    Keeps `fetch_posts` behavior intact for callers that need raw PRAW objects,
-    while providing a normalized `Post` list for downstream processing.
     """
-    raw = fetch_posts(hours)
-    posts = [_submission_to_post(s) for s in raw]
-    # Return explicit statistics (total count) alongside the models
+    raw_posts = fetch_posts(hours)
+    posts = [_raw_post_to_model(p) for p in raw_posts]
     return posts, len(posts)
 
 
@@ -187,7 +266,7 @@ if __name__ == "__main__":
     from collections import Counter
 
     parser = argparse.ArgumentParser(
-        description="Reddit collector quick check: list target subreddits and count posts within a time window."
+        description="Reddit collector: fetch posts from subreddits (no API key required)."
     )
     parser.add_argument(
         "--hours",
@@ -195,33 +274,51 @@ if __name__ == "__main__":
         default=24,
         help="Time window in hours (default: 24)",
     )
+    parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Enable verbose logging",
+    )
     args = parser.parse_args()
+
+    # Configure logging
+    log_level = logging.DEBUG if args.verbose else logging.INFO
+    logging.basicConfig(
+        level=log_level,
+        format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+    )
 
     print(f"Target subreddits: {', '.join(SUBREDDITS)}")
     print(f"Hours window: {args.hours}")
-
-    # Configure a basic logger for CLI use if not already configured
-    if not logging.getLogger().handlers:
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
-        )
+    print("-" * 60)
 
     try:
-        submissions = fetch_posts(args.hours)
-    except Exception as exc:  # Additional guard; should not trigger after above changes
+        posts, total = fetch_posts_as_models(args.hours)
+    except Exception as exc:
         logger.error("Collector error: %s", exc, exc_info=True)
-        submissions = []
+        posts, total = [], 0
 
-    total = len(submissions)
-    # Per-subreddit breakdown for easier validation
-    counts = Counter()
-    for s in submissions:
-        sr_name = getattr(getattr(s, "subreddit", None), "display_name", None)
-        if not sr_name:
-            sr_name = str(getattr(s, "subreddit", "unknown"))
-        counts[sr_name] += 1
+    # Per-subreddit breakdown
+    counts: Counter = Counter()
+    for p in posts:
+        # Extract subreddit from source_url
+        parts = p.source_url.split("/r/")
+        if len(parts) > 1:
+            sr = parts[1].split("/")[0]
+            counts[sr] += 1
 
-    print(f"Collected posts: {total}")
+    print(f"\nCollected posts: {total}")
     for name in SUBREDDITS:
         print(f"  - {name}: {counts.get(name, 0)}")
+
+    # Show sample post
+    if posts:
+        print("\n" + "=" * 60)
+        print("Sample post:")
+        print("=" * 60)
+        sample = posts[0]
+        print(f"Title: {sample.content[:100]}...")
+        print(f"Author: {sample.author_name}")
+        print(f"Score: {sample.likes} | Comments: {sample.comments}")
+        print(f"URL: {sample.source_url}")
+        print(f"Hash: {sample.content_hash[:16]}...")

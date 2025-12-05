@@ -23,7 +23,7 @@ config.py (centralized configuration)
 
 ### Features
 
-- **Reddit Collection**: Fetches posts from configurable subreddits (wallstreetbets, stocks, investing)
+- **Reddit Collection**: Fetches posts from subreddits (wallstreetbets, stocks, investing) - **No API key required**
 - **Time Window Filtering**: Collect posts from the last N hours (default: 24)
 - **LLM Sentiment Analysis**: Uses OpenAI GPT-4o-mini for sentiment classification (bullish/bearish/neutral)
 - **Ticker Extraction**: Automatically extracts stock ticker symbols from posts
@@ -43,11 +43,6 @@ pip install -r requirements.txt
 Set the following environment variables:
 
 ```bash
-# Required for Reddit collection
-export REDDIT_CLIENT_ID=your_client_id
-export REDDIT_CLIENT_SECRET=your_client_secret
-export REDDIT_USER_AGENT=your_user_agent  # optional
-
 # Required for LLM analysis
 export OPENAI_API_KEY=sk-your-api-key
 
@@ -57,20 +52,22 @@ export MAX_PARALLEL_LLM=8        # default
 export LOG_LEVEL=INFO            # default
 ```
 
+**Note**: Reddit collection does not require API credentials. It uses public .json endpoints.
+
 ### Usage
 
 ```bash
-# Collect posts from the last 24 hours (default)
-python main.py
+# Test Reddit collector first (no API key needed)
+python tests/test_collector.py
 
-# Collect posts from the last 6 hours
+# Or test collector directly
+python -m collectors.reddit --hours 1
+
+# Run full pipeline (requires OPENAI_API_KEY)
 python main.py --hours 6
 
 # Test LLM analysis directly
 python -m llm "AAPL earnings beat expectations, stock surging"
-
-# Test Reddit collector
-python -m collectors.reddit --hours 1
 ```
 
 ### Output
@@ -111,8 +108,9 @@ Posts are stored in `sentiment.db` (SQLite) with the following fields:
 ### Module Reference
 
 - `main.py` - CLI entry point and pipeline orchestration
-- `collectors/reddit.py` - Reddit data collection via PRAW
+- `collectors/reddit.py` - Reddit data collection (no API key required)
 - `models.py` - Post dataclass with content_hash property
 - `llm.py` - LangChain OpenAI sentiment analysis
 - `db.py` - SQLite/Peewee database operations
 - `config.py` - Centralized configuration and performance monitoring
+- `tests/test_collector.py` - Collector test suite

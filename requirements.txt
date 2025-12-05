@@ -1,5 +1,6 @@
-# Reddit API client
-praw>=7.7.0
+# HTTP requests (for Reddit scraping)
+requests>=2.31.0
+urllib3>=2.0.0
 
 # Database ORM
 peewee>=3.17.0
