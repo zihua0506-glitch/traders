@@ -18,6 +18,7 @@ from datetime import datetime
 from peewee import (
     AutoField,
     CharField,
+    FloatField,
     IntegerField,
     TextField,
     IntegrityError,
@@ -41,6 +42,27 @@ db = SqliteExtDatabase(DB_FILE, pragmas={
 class BaseModel(Model):
     class Meta:
         database = db
+
+
+class IndexStock(BaseModel):
+    """Table storing index component stocks (S&P 500, Nasdaq 100)."""
+
+    # Primary key
+    id = AutoField()
+
+    # Stock identifiers
+    ticker = CharField(max_length=16, unique=True, index=True)
+    company_name = CharField(max_length=256)
+
+    # Index membership
+    index_name = CharField(max_length=32)  # sp500, nasdaq100
+
+    # Sector/Industry classification
+    sector = CharField(max_length=128, null=True)
+    industry = CharField(max_length=256, null=True)
+
+    # Metadata
+    updated_at = IntegerField()  # Unix timestamp
 
 
 class SentimentPost(BaseModel):
@@ -80,7 +102,7 @@ class SentimentPost(BaseModel):
 def init_db() -> None:
     """Initialize database and create tables if missing."""
     db.connect(reuse_if_open=True)
-    db.create_tables([SentimentPost])
+    db.create_tables([IndexStock, SentimentPost])
 
 
 def save_post(post: Post, sentiment: str, tickers: List[str], summary: str) -> bool:
@@ -156,10 +178,62 @@ def validate_fields_integrity(limit: int = 10) -> bool:
 init_db()
 
 
+def save_index_stock(
+    ticker: str,
+    company_name: str,
+    index_name: str,
+    sector: str = None,
+    industry: str = None,
+) -> bool:
+    """Save or update an index stock record.
+
+    Uses ticker as unique key. Updates existing record if ticker exists.
+    Returns True on success.
+    """
+    now_ts = int(datetime.utcnow().timestamp())
+
+    # Try to update existing record first
+    updated = IndexStock.update(
+        company_name=company_name,
+        index_name=index_name,
+        sector=sector,
+        industry=industry,
+        updated_at=now_ts,
+    ).where(IndexStock.ticker == ticker).execute()
+
+    if updated:
+        return True
+
+    # Insert new record
+    try:
+        IndexStock.create(
+            ticker=ticker,
+            company_name=company_name,
+            index_name=index_name,
+            sector=sector,
+            industry=industry,
+            updated_at=now_ts,
+        )
+        return True
+    except IntegrityError:
+        return False
+
+
+def get_index_stocks(index_name: str = None) -> List[IndexStock]:
+    """Get all stocks, optionally filtered by index name."""
+    query = IndexStock.select()
+    if index_name:
+        query = query.where(IndexStock.index_name == index_name)
+    return list(query.order_by(IndexStock.ticker))
+
+
 __all__ = [
     "db",
+    "IndexStock",
     "SentimentPost",
     "init_db",
+    "save_index_stock",
+    "get_index_stocks",
     "save_post",
     "exists_content_hash",
     "validate_fields_integrity",

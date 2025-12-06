@@ -1,14 +1,7 @@
 """Sentiment collector main pipeline.
 
-Implements Tasks 17-22:
-- Parse CLI arg `--hours` with default 24 (argparse)
-- Collect posts and accumulate total counts per data source (Reddit)
-- Pre-dedupe before LLM via `exists_content_hash`
-- Controlled LLM concurrency (`MAX_PARALLEL_LLM=8`) using asyncio + semaphore
-- Robust error handling: log and continue on failures/timeouts
-- Summary stats: per source collected/inserted counts printed at end
-
-This integrates collectors.reddit, llm, and db modules per the design.
+Collects posts from multiple sources (Reddit, Yahoo Finance, Finviz),
+analyzes sentiment via LLM, and stores in SQLite.
 """
 
 from __future__ import annotations
@@ -18,7 +11,7 @@ import asyncio
 import logging
 from typing import Dict, List, Optional, Tuple
 
-from collectors.reddit import fetch_posts_as_models
+from collectors import fetch_all_sources, WORKING_COLLECTORS, COLLECTORS
 from llm import analyze
 from db import save_post, exists_content_hash
 from models import Post
@@ -30,28 +23,38 @@ from config import (
 )
 
 
-# Constants imported from centralized config
-
-
 logger = logging.getLogger(__name__)
 
 
 def _configure_root_logger() -> None:
-    # Delegate to centralized config
     configure_logging()
 
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description=(
-            "Collect recent Reddit posts, analyze sentiment via LLM, and store in SQLite."
-        )
+        description="Collect posts from social/news sources, analyze sentiment via LLM, and store in SQLite."
     )
     parser.add_argument(
         "--hours",
         type=int,
         default=24,
         help="Time window in hours to collect posts (default: 24)",
+    )
+    parser.add_argument(
+        "--source",
+        choices=list(COLLECTORS.keys()) + ["all"],
+        default="all",
+        help="Data source to collect from (default: all working sources)",
+    )
+    parser.add_argument(
+        "--symbols",
+        nargs="+",
+        help="Stock symbols to fetch (default: trending/general)",
+    )
+    parser.add_argument(
+        "--no-llm",
+        action="store_true",
+        help="Skip LLM analysis (collect only)",
     )
     return parser.parse_args()
 
@@ -68,7 +71,6 @@ async def _run_llm_with_limit(posts: List[Post]) -> List[Tuple[Post, Optional[di
     async def _task(post: Post) -> Tuple[Post, Optional[dict]]:
         await sem.acquire()
         try:
-            # Offload blocking LLM call to thread pool to avoid blocking event loop
             result = await loop.run_in_executor(None, analyze, post)
             return post, result
         except Exception as exc:
@@ -78,7 +80,6 @@ async def _run_llm_with_limit(posts: List[Post]) -> List[Tuple[Post, Optional[di
             sem.release()
 
     tasks = [_task(p) for p in posts]
-    # Gather with return_exceptions=False; individual task handles its own errors
     return await asyncio.gather(*tasks)
 
 
@@ -86,81 +87,119 @@ def main() -> int:
     args = _parse_args()
     _configure_root_logger()
 
-    # Collector: Reddit
-    try:
-        reddit_posts, reddit_collected = fetch_posts_as_models(args.hours)
-    except Exception as exc:
-        logger.error("Reddit collection failed: %s", exc, exc_info=True)
-        reddit_posts, reddit_collected = [], 0
+    # Determine sources to collect from
+    if args.source == "all":
+        sources = WORKING_COLLECTORS
+    else:
+        sources = [args.source]
 
-    logger.info("Collected from reddit: %d posts (within %d hours)", reddit_collected, args.hours)
+    # Collect from all sources
+    print("=" * 60)
+    print("Sentiment Collector")
+    print("=" * 60)
+    print(f"Sources: {sources}")
+    print(f"Hours: {args.hours}")
+    print(f"Symbols: {args.symbols or 'trending'}")
+    print("-" * 60)
 
-    # Pre-dedupe before LLM: skip posts whose content_hash already exists
+    all_posts: List[Post] = []
+    source_stats: Dict[str, int] = {}
+
+    results = fetch_all_sources(hours=args.hours, sources=sources, symbols=args.symbols)
+
+    for source, (posts, count) in results.items():
+        source_stats[source] = count
+        all_posts.extend(posts)
+        logger.info("Collected from %s: %d posts", source, count)
+
+    total_collected = len(all_posts)
+    print(f"\nCollected: {total_collected} posts total")
+    for source, count in source_stats.items():
+        print(f"  - {source}: {count}")
+
+    if args.no_llm:
+        print("\n[--no-llm] Skipping LLM analysis")
+        print("=" * 60)
+        return 0
+
+    # Pre-dedupe before LLM
     to_analyze: List[Post] = []
     skipped_dupes = 0
-    for p in reddit_posts:
+    for p in all_posts:
         try:
             if exists_content_hash(p.content_hash):
                 skipped_dupes += 1
                 continue
             to_analyze.append(p)
         except Exception as exc:
-            # Defensive: existence check error should not break pipeline
             logger.warning("exists_content_hash error: %s", exc, exc_info=True)
-            # fall back to analyzing; better to try than drop completely
             to_analyze.append(p)
 
-    logger.info("Pre-dedupe skipped existing: %d", skipped_dupes)
+    print(f"\nPre-dedupe: {skipped_dupes} duplicates skipped")
+    print(f"To analyze: {len(to_analyze)} posts")
 
-    # Controlled concurrency LLM
+    if not to_analyze:
+        print("\nNo new posts to analyze.")
+        print("=" * 60)
+        return 0
+
+    # LLM analysis with concurrency control
+    print(f"\nRunning LLM analysis (concurrency={MAX_PARALLEL_LLM})...")
+
     saved_ok = 0
     analyzed_count = 0
 
-    if to_analyze:
-        # Start performance sampling window at up to 300 attempts
-        perf_start_sample(limit=min(300, len(to_analyze)))
+    perf_start_sample(limit=min(300, len(to_analyze)))
+
+    try:
+        results = asyncio.run(_run_llm_with_limit(to_analyze))
+    except Exception as exc:
+        logger.error("LLM batch run failed: %s", exc, exc_info=True)
+        results = []
+
+    # Save results
+    for post, result in results:
+        analyzed_count += 1
+        if not result:
+            continue
         try:
-            results = asyncio.run(_run_llm_with_limit(to_analyze))
+            if not result.get("is_valid"):
+                continue
+            ok = save_post(
+                post,
+                sentiment=str(result.get("sentiment", "neutral")),
+                tickers=list(result.get("tickers", [])),
+                summary=str(result.get("summary", "")),
+            )
+            if ok:
+                saved_ok += 1
         except Exception as exc:
-            logger.error("LLM batch run failed: %s", exc, exc_info=True)
-            results = []
+            logger.warning("DB save failed: %s", exc, exc_info=True)
+            continue
 
-        # Save sequentially to avoid SQLite thread issues
-        for post, result in results:
-            analyzed_count += 1
-            if not result:
-                # Analysis error/timeout already logged; skip storage
-                continue
-            try:
-                if not result.get("is_valid"):
-                    continue
-                ok = save_post(
-                    post,
-                    sentiment=str(result.get("sentiment", "neutral")),
-                    tickers=list(result.get("tickers", [])),
-                    summary=str(result.get("summary", "")),
-                )
-                if ok:
-                    saved_ok += 1
-            except Exception as exc:
-                logger.warning("DB save failed: %s", exc, exc_info=True)
-                continue
-
-    # Stats output per data source (reddit only in MVP)
+    # Summary
+    print("\n" + "-" * 60)
     print("Summary:")
-    print(f"  reddit: collected={reddit_collected}, dedupe_skipped={skipped_dupes}, analyzed={analyzed_count}, saved={saved_ok}")
-    total_collected = reddit_collected
-    total_saved = saved_ok
-    print(f"  total: collected={total_collected}, saved={total_saved}")
+    print(f"  Collected: {total_collected}")
+    print(f"  Duplicates skipped: {skipped_dupes}")
+    print(f"  Analyzed: {analyzed_count}")
+    print(f"  Saved: {saved_ok}")
 
-    # Performance stats (Task 25)
+    # Per-source breakdown
+    print("\nPer source:")
+    for source, count in source_stats.items():
+        print(f"  - {source}: {count} collected")
+
+    # Performance stats
     stats = get_perf_stats()
     if stats.get("attempts", 0) > 0:
-        print("Perf:")
-        print(
-            f"  avg_latency_s={stats['avg_latency_s']}, total_wall_time_s={stats['total_wall_time_s']}, attempts={int(stats['attempts'])}, failure_ratio={stats['failure_ratio']}"
-        )
+        print("\nPerformance:")
+        print(f"  Avg latency: {stats['avg_latency_s']:.2f}s")
+        print(f"  Total time: {stats['total_wall_time_s']:.2f}s")
+        print(f"  Attempts: {int(stats['attempts'])}")
+        print(f"  Failure ratio: {stats['failure_ratio']:.2%}")
 
+    print("=" * 60)
     return 0
 
 

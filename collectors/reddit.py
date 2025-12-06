@@ -12,13 +12,10 @@ import json
 import logging
 import random
 import time
-from typing import List, Tuple
-
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
+from typing import List, Tuple, Optional
 
 from models import Post
+from .base import BaseCollector
 
 
 # Logger
@@ -31,43 +28,24 @@ SUBREDDITS = [
     "investing",
 ]
 
-# Random user agents to avoid detection
-USER_AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-]
-
 # Configuration
-REQUEST_TIMEOUT = 15
 MAX_POSTS_PER_REQUEST = 100
 RATE_LIMIT_DELAY = (1.0, 2.0)  # Random delay range in seconds
 
 
-class RedditScraper:
-    """Reddit scraper using public .json endpoints (no API key required).
+class RedditCollector(BaseCollector):
+    """Reddit collector using public .json endpoints (no API key required).
 
     This is a YARS-style implementation that scrapes Reddit without
     requiring official API credentials.
     """
 
-    def __init__(self, timeout: int = REQUEST_TIMEOUT):
-        self.timeout = timeout
-        self.session = requests.Session()
-        self.session.headers.update({
-            "User-Agent": random.choice(USER_AGENTS),
-            "Accept": "application/json",
-        })
+    source_name = "reddit"
 
-        # Configure retries for resilience
-        retries = Retry(
-            total=3,
-            backoff_factor=2,
-            status_forcelist=[429, 500, 502, 503, 504],
-        )
-        self.session.mount("https://", HTTPAdapter(max_retries=retries))
+    def __init__(self, timeout: int = 15, delay: float = 1.0):
+        super().__init__(timeout=timeout, delay=delay)
+        # Reddit prefers JSON accept header
+        self.session.headers.update({"Accept": "application/json"})
 
     def fetch_subreddit_posts(
         self,
@@ -104,9 +82,9 @@ class RedditScraper:
                 params["after"] = after
 
             try:
-                response = self.session.get(url, params=params, timeout=self.timeout)
+                response = self._get(url, params=params)
                 response.raise_for_status()
-            except requests.exceptions.RequestException as e:
+            except Exception as e:
                 logger.error("Request to r/%s failed: %s", subreddit, e)
                 break
 
@@ -156,17 +134,96 @@ class RedditScraper:
 
         return all_posts[:limit]
 
+    def fetch_by_symbol(
+        self,
+        symbol: str,
+        limit: int = 50,
+        since_ts: int = 0,
+    ) -> List[dict]:
+        """Fetch posts mentioning a stock symbol.
 
-# Module-level scraper instance
-_scraper: RedditScraper | None = None
+        Note: Reddit doesn't have a direct symbol search via .json,
+        so this fetches from configured subreddits and relies on
+        downstream LLM to extract tickers.
+        """
+        # For Reddit, symbol search isn't directly supported
+        # We fetch trending and let LLM extract tickers
+        return self.fetch_trending(limit=limit, since_ts=since_ts)
+
+    def fetch_trending(
+        self,
+        limit: int = 50,
+        since_ts: int = 0,
+    ) -> List[dict]:
+        """Fetch trending posts from configured subreddits."""
+        all_posts = []
+        per_sub_limit = max(limit // len(SUBREDDITS), 20)
+
+        for subreddit in SUBREDDITS:
+            try:
+                posts = self.fetch_subreddit_posts(
+                    subreddit=subreddit,
+                    limit=per_sub_limit,
+                    category="new",
+                    since_ts=since_ts,
+                )
+                all_posts.extend(posts)
+                logger.info("Collected %d posts from r/%s", len(posts), subreddit)
+            except Exception as e:
+                logger.error("Error collecting from r/%s: %s", subreddit, e)
+                continue
+
+        return all_posts[:limit]
+
+    def _to_post(self, raw: dict) -> Post:
+        """Convert raw Reddit post to Post model.
+
+        Field mapping:
+        - content: title + selftext
+        - source: constant 'reddit'
+        - source_id: post id
+        - source_url: permalink
+        - post_time: created_utc
+        - likes: score
+        - comments: num_comments
+        - shares: 0 (no Reddit concept)
+        - author_id: empty (not available without API)
+        - author_name: author username
+        """
+        title = raw.get("title", "") or ""
+        body = raw.get("selftext", "") or ""
+        content = f"{title}\n\n{body}".strip()
+
+        permalink = raw.get("permalink", "")
+        if permalink and not permalink.startswith("http"):
+            source_url = f"https://www.reddit.com{permalink}"
+        else:
+            source_url = permalink or raw.get("url", "")
+
+        return Post(
+            source="reddit",
+            source_id=str(raw.get("id", "")),
+            source_url=source_url,
+            content=content,
+            author_id="",  # Not available without API auth
+            author_name=str(raw.get("author", "[deleted]")),
+            post_time=int(raw.get("created_utc", 0)),
+            likes=int(raw.get("score", 0)),
+            comments=int(raw.get("num_comments", 0)),
+            shares=0,
+        )
 
 
-def _get_scraper() -> RedditScraper:
-    """Get or create the module-level scraper instance."""
-    global _scraper
-    if _scraper is None:
-        _scraper = RedditScraper()
-    return _scraper
+# Module-level collector instance
+_collector: RedditCollector | None = None
+
+
+def _get_collector() -> RedditCollector:
+    """Get or create the module-level collector instance."""
+    global _collector
+    if _collector is None:
+        _collector = RedditCollector()
+    return _collector
 
 
 def fetch_posts(hours: int) -> List[dict]:
@@ -187,77 +244,29 @@ def fetch_posts(hours: int) -> List[dict]:
     now_ts = int(time.time())
     since_ts = now_ts - hours * 3600
 
-    scraper = _get_scraper()
-    collected: List[dict] = []
-
-    for name in SUBREDDITS:
-        try:
-            logger.info("Fetching posts from r/%s (since %d hours ago)", name, hours)
-            posts = scraper.fetch_subreddit_posts(
-                subreddit=name,
-                limit=1000,
-                category="new",
-                since_ts=since_ts,
-            )
-            collected.extend(posts)
-            logger.info("Collected %d posts from r/%s", len(posts), name)
-        except Exception as exc:
-            logger.error(
-                "Error collecting from subreddit '%s': %s", name, exc, exc_info=True
-            )
-            continue
-
-    return collected
+    collector = _get_collector()
+    return collector.fetch_trending(limit=1000, since_ts=since_ts)
 
 
-def _raw_post_to_model(raw: dict) -> Post:
-    """Map a raw Reddit post dict to a normalized Post dataclass.
-
-    Field mapping:
-    - content: title + selftext
-    - source: constant 'reddit'
-    - source_id: post id
-    - source_url: permalink
-    - post_time: created_utc
-    - likes: score
-    - comments: num_comments
-    - shares: 0 (no Reddit concept)
-    - author_id: empty (not available without API)
-    - author_name: author username
-    """
-    title = raw.get("title", "") or ""
-    body = raw.get("selftext", "") or ""
-    content = f"{title}\n\n{body}".strip()
-
-    permalink = raw.get("permalink", "")
-    if permalink and not permalink.startswith("http"):
-        source_url = f"https://www.reddit.com{permalink}"
-    else:
-        source_url = permalink or raw.get("url", "")
-
-    return Post(
-        source="reddit",
-        source_id=str(raw.get("id", "")),
-        source_url=source_url,
-        content=content,
-        author_id="",  # Not available without API auth
-        author_name=str(raw.get("author", "[deleted]")),
-        post_time=int(raw.get("created_utc", 0)),
-        likes=int(raw.get("score", 0)),
-        comments=int(raw.get("num_comments", 0)),
-        shares=0,
-    )
-
-
-def fetch_posts_as_models(hours: int) -> Tuple[List[Post], int]:
+def fetch_posts_as_models(
+    hours: int,
+    symbols: Optional[List[str]] = None,
+) -> Tuple[List[Post], int]:
     """Fetch recent posts and map them to Post models.
 
-    Returns a tuple of (`posts`, `total_count`) to make the collector's
-    statistics explicit for downstream aggregation.
+    Args:
+        hours: Time window in hours
+        symbols: Optional list of stock symbols (not used for Reddit)
+
+    Returns:
+        Tuple of (posts, total_count)
     """
-    raw_posts = fetch_posts(hours)
-    posts = [_raw_post_to_model(p) for p in raw_posts]
-    return posts, len(posts)
+    collector = _get_collector()
+    return collector.fetch_posts(hours=hours, symbols=symbols)
+
+
+# Legacy alias for backward compatibility
+RedditScraper = RedditCollector
 
 
 if __name__ == "__main__":
