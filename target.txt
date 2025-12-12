@@ -1,35 +1,23 @@
-三个迭代完成三个symbol的预测，
+Predict the following symbols across three iterations:
 
 BTC
 ETH
 TESLA
 NVDIA
 META
-SP500（指数）
-NV100（指数）
+SP500 (index)
+NV100 (index)
 
+2-minute window: predict direction
 
-2分钟窗口 预测方向
+Zihua tasks
+Iteration 1: List potential mathematical models, document them in tools/README, and list the data required to train these models.
 
+John:
+Iteration 1: Implement scraping for two social platforms (X and one TBD).
 
+Ruoting:
+Market research
 
-Zihua task
-迭代1: 可能用到的几个数学模型列出来，写在tool目录下的readme中，并且列出来需要什么数据来训练这些模型，
-
-
-John：
-
-
-迭代1: 下一个迭代搞定两个社媒的抓取X，另一个待定的社媒。
-
-
-
-
-若婷：
-
-市场调研
-
-
-
-John：
-迭代2: 帮zihua抓取tool 中模型需要的数据，
+John:
+Iteration 2: Help Zihua collect the data needed for the models in tools.

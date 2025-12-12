@@ -19,3 +19,9 @@ lxml>=5.0.0
 # HTML/RSS parsing for collectors
 beautifulsoup4>=4.12.0
 feedparser>=6.0.0
+
+# Browser automation and environment management
+playwright>=1.42.0
+python-dotenv>=1.0.0
+
+python-dotenv

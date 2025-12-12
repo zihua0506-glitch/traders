@@ -26,6 +26,10 @@ from .finviz import (
     FinvizCollector,
     fetch_posts_as_models as fetch_finviz,
 )
+try:
+    from .x_scraper import XScraperCollector  # optional; may be absent
+except Exception:
+    XScraperCollector = None
 
 # Registry of available collectors
 COLLECTORS = {
@@ -78,6 +82,7 @@ __all__ = [
     "StockTwitsCollector",
     "YahooFinanceCollector",
     "FinvizCollector",
+    "XScraperCollector",
     "COLLECTORS",
     "WORKING_COLLECTORS",
     "fetch_all_sources",

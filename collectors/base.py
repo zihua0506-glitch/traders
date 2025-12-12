@@ -6,6 +6,10 @@ Defines the abstract base class for all data collectors.
 from __future__ import annotations
 
 import logging
+import os
+import subprocess
+import urllib.request
+import socket
 import random
 import time
 from abc import ABC, abstractmethod
@@ -242,3 +246,60 @@ class BaseCollector(ABC):
                 )
 
         return posts, len(posts)
+
+    @staticmethod
+    def launch_local_chrome_cdp() -> None:
+        """Launch local Chrome with CDP enabled using env configuration.
+
+        Reads environment variables:
+        - `play_wright_profile_path`: Chrome user data dir
+        - `CHROME_PATH` (optional): explicit Chrome binary path
+
+        Uses a fixed CDP port 9222 and waits for `http://localhost:9222/json/version`.
+        On macOS, if `CHROME_PATH` is not set, uses `open -a "Google Chrome" --args ...`.
+
+        Raises RuntimeError if CDP endpoint does not become ready within timeout.
+        """
+        profile_dir = os.getenv("play_wright_profile_path")
+        if not profile_dir:
+            raise RuntimeError("Environment variable 'play_wright_profile_path' is required")
+
+        chrome_path = os.getenv("CHROME_PATH") or "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+        port = 9222
+        args = [
+            f"--remote-debugging-port={port}",
+            f"--user-data-dir={profile_dir}",
+        ]
+
+        # If port is already open, assume browser is running and skip launching
+        try:
+            with socket.create_connection(("127.0.0.1", port), timeout=2):
+                return
+        except Exception:
+            pass
+        endpoint = f"http://localhost:{port}/json/version"
+
+        # Prefer explicit binary path; if it fails, try macOS 'open -a'
+        cmd = [chrome_path] + args
+        try:
+            subprocess.Popen(cmd)
+        except Exception:
+            cmd = ["open", "-a", "Google Chrome", "--args"] + args
+            res = subprocess.run(cmd, capture_output=True)
+            if res.returncode != 0:
+                stderr = res.stderr.decode(errors="ignore") if res.stderr else ""
+                raise RuntimeError(f"Failed to launch Chrome: {stderr.strip() or 'open -a failed'}")
+
+        # Wait for CDP to be ready
+        deadline = time.time() + 20
+        last_err = None
+        while time.time() < deadline:
+            try:
+                with urllib.request.urlopen(endpoint, timeout=2) as resp:
+                    if resp.status == 200:
+                        return
+            except Exception as e:
+                last_err = e
+            time.sleep(0.5)
+
+        raise RuntimeError(f"CDP endpoint not ready at {endpoint}: {last_err}")

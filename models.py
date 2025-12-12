@@ -6,7 +6,7 @@ The `content_hash` is a derived, deterministic hash based solely on `content`.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from hashlib import sha256
 
 
@@ -34,6 +34,16 @@ class Post:
     likes: int = 0
     comments: int = 0
     shares: int = 0
+
+    # Extended media and relation fields
+    bookmarks: int = 0
+    views: int = 0
+    images: list[str] = field(default_factory=list)
+    video_url: str = ""
+    quoted_url: str = ""
+    is_retweet: bool = False
+    is_reply: bool = False
+    original_source_id: str = ""
 
     @property
     def content_hash(self) -> str:

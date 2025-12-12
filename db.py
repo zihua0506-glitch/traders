@@ -18,6 +18,7 @@ from datetime import datetime
 from peewee import (
     AutoField,
     CharField,
+    BooleanField,
     FloatField,
     IntegerField,
     TextField,
@@ -95,61 +96,111 @@ class SentimentPost(BaseModel):
     comments = IntegerField(default=0)
     shares = IntegerField(default=0)
 
+    # Extended media and relation fields
+    bookmarks = IntegerField(default=0)
+    views = IntegerField(default=0)
+    images = JSONField(null=True)  # list[str]
+    video_url = CharField(max_length=512, default="")
+    quoted_url = CharField(max_length=512, default="")
+    is_retweet = IntegerField(default=0)  # 0/1
+    is_reply = IntegerField(default=0)   # 0/1
+    original_source_id = CharField(max_length=128, default="")
+
     # Insert timestamp
     created_at = IntegerField()  # unix seconds
+
+    class Meta:
+        indexes = (
+            (("source", "source_id"), True),  # unique composite index
+        )
+
+
+class XUsername(BaseModel):
+    """Table storing X (Twitter) usernames to collect."""
+
+    id = AutoField()
+    username = CharField(max_length=64, unique=True, index=True)
+    enabled = BooleanField(default=True)
 
 
 def init_db() -> None:
     """Initialize database and create tables if missing."""
     db.connect(reuse_if_open=True)
-    db.create_tables([IndexStock, SentimentPost])
+    db.create_tables([IndexStock, SentimentPost, XUsername])
 
 
 def save_post(post: Post, sentiment: str, tickers: List[str], summary: str) -> bool:
-    """Persist a post with sentiment results.
-
-    Returns False if a row with the same `content_hash` already exists
-    (unique constraint violation). Returns True on successful insert.
-    """
-    # Basic defensive checks for required fields
-    if not post.content or not post.source or not post.source_url:
-        raise ValueError("Post has missing required fields: content/source/source_url")
-    if not isinstance(tickers, list):
-        raise TypeError("tickers must be a list of strings")
-
-    now_ts = int(datetime.utcnow().timestamp())
-
-    try:
-        SentimentPost.create(
-            source=post.source,
-            source_id=post.source_id,
-            source_url=post.source_url,
-            content=post.content,
-            content_hash=post.content_hash,
-            sentiment=sentiment,
-            tickers=tickers,
-            summary=summary,
-            author_id=post.author_id,
-            author_name=post.author_name,
-            post_time=post.post_time,
-            likes=post.likes,
-            comments=post.comments,
-            shares=post.shares,
-            created_at=now_ts,
-        )
-        return True
-    except IntegrityError:
-        # Duplicate content_hash is considered a normal dedupe case
-        return False
+    """Persist a post (legacy helper). Delegates to SentimentModel.save."""
+    return SentimentModel.save(post, sentiment, tickers, summary)
 
 
 def exists_content_hash(content_hash: str) -> bool:
-    """Return True if a row with the given content_hash exists."""
-    if not content_hash:
-        return False
-    return SentimentPost.select().where(
-        SentimentPost.content_hash == content_hash
-    ).exists()
+    """Legacy helper; delegates to SentimentModel.exists_content_hash."""
+    return SentimentModel.exists_content_hash(content_hash)
+
+
+class SentimentModel:
+    """DB storage facade for sentiment posts."""
+
+    @staticmethod
+    def save(post: Post, sentiment: str, tickers: List[str], summary: str) -> bool:
+        """Save a post row with sentiment fields.
+
+        Returns False on unique conflicts (content_hash or source+source_id), True on success.
+        """
+        # Basic defensive checks for required fields
+        if not post.content or not post.source or not post.source_url:
+            raise ValueError("Post has missing required fields: content/source/source_url")
+        if not isinstance(tickers, list):
+            raise TypeError("tickers must be a list of strings")
+
+        now_ts = int(datetime.utcnow().timestamp())
+        try:
+            SentimentPost.create(
+                source=post.source,
+                source_id=post.source_id,
+                source_url=post.source_url,
+                content=post.content,
+                content_hash=post.content_hash,
+                sentiment=sentiment,
+                tickers=tickers,
+                summary=summary,
+                author_id=post.author_id,
+                author_name=post.author_name,
+                post_time=post.post_time,
+                likes=post.likes,
+                comments=post.comments,
+                shares=post.shares,
+                bookmarks=getattr(post, "bookmarks", 0) or 0,
+                views=getattr(post, "views", 0) or 0,
+                images=getattr(post, "images", None) or [],
+                video_url=getattr(post, "video_url", "") or "",
+                quoted_url=getattr(post, "quoted_url", "") or "",
+                is_retweet=1 if getattr(post, "is_retweet", False) else 0,
+                is_reply=1 if getattr(post, "is_reply", False) else 0,
+                original_source_id=getattr(post, "original_source_id", "") or "",
+                created_at=now_ts,
+            )
+            return True
+        except IntegrityError:
+            return False
+
+    @staticmethod
+    def exists_content_hash(content_hash: str) -> bool:
+        """Return True if content_hash exists."""
+        if not content_hash:
+            return False
+        return SentimentPost.select().where(SentimentPost.content_hash == content_hash).exists()
+
+    @staticmethod
+    def exists_source_id(source: str, source_id: str) -> bool:
+        """Return True if (source, source_id) combo exists."""
+        if not source or not source_id:
+            return False
+        return (SentimentPost
+                .select()
+                .where((SentimentPost.source == source) & (SentimentPost.source_id == source_id))
+                ).exists()
 
 
 def validate_fields_integrity(limit: int = 10) -> bool:
@@ -176,6 +227,15 @@ def validate_fields_integrity(limit: int = 10) -> bool:
 
 # Initialize on import for convenience in the MVP.
 init_db()
+
+
+def get_enabled_x_usernames() -> List[str]:
+    """Return all enabled X usernames (enabled = True)."""
+    q = (XUsername
+         .select(XUsername.username)
+         .where(XUsername.enabled == True)  # noqa: E712
+         .order_by(XUsername.username))
+    return [row.username for row in q]
 
 
 def save_index_stock(
@@ -231,10 +291,13 @@ __all__ = [
     "db",
     "IndexStock",
     "SentimentPost",
+    "XUsername",
     "init_db",
     "save_index_stock",
     "get_index_stocks",
     "save_post",
     "exists_content_hash",
     "validate_fields_integrity",
+    "SentimentModel",
+    "get_enabled_x_usernames",
 ]
