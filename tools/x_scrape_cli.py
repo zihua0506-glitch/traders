@@ -92,9 +92,94 @@ def main():
             pass
         return None
 
+    def find_remote_debug_pid(port: int) -> Optional[int]:
+        """Find a process PID that was launched with --remote-debugging-port=PORT.
+
+        Falls back to lsof to find a listener on the given port.
+        """
+        try:
+            # Scan process args for the flag
+            if platform.system() == "Darwin":
+                cmd = ["ps", "ax", "-o", "pid=,command="]
+            else:
+                cmd = ["ps", "-eo", "pid=,args="]
+            out = subprocess.check_output(cmd).decode(errors="ignore")
+            for line in out.splitlines():
+                if f"--remote-debugging-port={port}" in line:
+                    pid_str = line.strip().split()[0]
+                    try:
+                        return int(pid_str)
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+        # Fallback: lsof on the port
+        try:
+            lsof_cmd = ["lsof", "-n", f"-iTCP:{port}", "-sTCP:LISTEN", "-P"]
+            out = subprocess.check_output(lsof_cmd, stderr=subprocess.DEVNULL).decode(errors="ignore")
+            for line in out.splitlines()[1:]:  # skip header
+                parts = line.split()
+                if parts:
+                    try:
+                        # PID is typically in the 2nd column
+                        pid = int(parts[1])
+                        return pid
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+        return None
+
+    def list_remote_debug_pids(port: int) -> List[int]:
+        """List all process PIDs associated with the given remote debugging port.
+
+        Combines processes launched with the flag and processes actively listening
+        on the port via lsof. Deduplicates results.
+        """
+        pids: List[int] = []
+        # Collect by flag
+        try:
+            if platform.system() == "Darwin":
+                cmd = ["ps", "ax", "-o", "pid=,command="]
+            else:
+                cmd = ["ps", "-eo", "pid=,args="]
+            out = subprocess.check_output(cmd).decode(errors="ignore")
+            for line in out.splitlines():
+                if f"--remote-debugging-port={port}" in line:
+                    try:
+                        pids.append(int(line.strip().split()[0]))
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+        # Collect by lsof
+        try:
+            lsof_cmd = ["lsof", "-n", f"-iTCP:{port}", "-sTCP:LISTEN", "-P"]
+            out = subprocess.check_output(lsof_cmd, stderr=subprocess.DEVNULL).decode(errors="ignore")
+            for line in out.splitlines()[1:]:
+                parts = line.split()
+                if len(parts) >= 2:
+                    try:
+                        pids.append(int(parts[1]))
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+        # Dedup while preserving order
+        seen = set()
+        uniq: List[int] = []
+        for pid in pids:
+            if pid not in seen:
+                seen.add(pid)
+                uniq.append(pid)
+        return uniq
+
     def launch_chrome_cdp(profile: str, port: int = PORT, headless: bool = False) -> Tuple[Optional[subprocess.Popen], Optional[int]]:
         if port_open(port):
-            return None, None
+            # Port already in use; capture PID so we can kill on exit
+            existing_pid = find_remote_debug_pid(port)
+            logging.info("Remote debugging port %s already open (pid=%s)", port, existing_pid)
+            return None, existing_pid
         chrome_path = os.getenv("CHROME_PATH") or (
             "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
             if platform.system() == "Darwin" else "google-chrome"
@@ -108,7 +193,7 @@ def main():
             args.append("--headless=new")
         proc: Optional[subprocess.Popen] = None
         try:
-            proc = subprocess.Popen([chrome_path] + args)
+            proc = subprocess.Popen([chrome_path] + args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except Exception:
             # macOS fallback: open -a (PID tracking via ps scan)
             if platform.system() == "Darwin":
@@ -120,7 +205,7 @@ def main():
                 raise
         if not wait_cdp_ready(port):
             raise RuntimeError("CDP endpoint not ready")
-        pid = proc.pid if proc else find_chrome_pid(profile, port)
+        pid = proc.pid if proc else (find_chrome_pid(profile, port) or find_remote_debug_pid(port))
         return proc, pid
 
     # Launch Chrome with CDP (self-managed) and set X_CDP_URL
@@ -233,17 +318,29 @@ def main():
             except Exception:
                 logging.warning("Terminate timeout; killing Chrome process")
                 proc.kill()
-        elif pid is not None:
-            # Graceful, then force
-            try:
-                os.kill(pid, 15)
-                time.sleep(1)
-            except Exception:
-                logging.debug("SIGTERM failed or not applicable")
-            try:
-                os.kill(pid, 9)
-            except Exception:
-                logging.debug("SIGKILL failed or not applicable")
+        # Kill by known pid (if any)
+        if pid is not None:
+            for sig in (15, 9):
+                try:
+                    os.kill(pid, sig)
+                    if sig == 15:
+                        time.sleep(1)
+                except Exception:
+                    pass
+        # Kill all processes associated with the remote debugging port
+        all_pids = list_remote_debug_pids(PORT)
+        if all_pids:
+            logging.info("Killing all processes on remote debugging port %s: %s", PORT, all_pids)
+            for p in all_pids:
+                for sig in (15, 9):
+                    try:
+                        os.kill(p, sig)
+                        if sig == 15:
+                            time.sleep(1)
+                    except Exception:
+                        pass
+        else:
+            logging.info("No remaining processes detected on port %s", PORT)
     except Exception:
         logging.exception("Error while shutting down Chrome")
 

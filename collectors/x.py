@@ -443,16 +443,16 @@ def extract_tweet(article: ElementHandle, target_username: str) -> Optional[Dict
     }
 
 
-def scroll_to_load(page: Page, max_scrolls: int = 30) -> None:
+def scroll_to_load(page: Page, max_scrolls: int = 10) -> None:
     prev_count = 0
     for _ in range(max_scrolls):
-        page.mouse.wheel(0, 2000)
-        page.wait_for_timeout(800)
+        page.mouse.wheel(0, 1200)
+        page.wait_for_timeout(350)
         articles = page.query_selector_all("article[data-testid='tweet']")
         c = len(articles)
         if c <= prev_count:
             page.keyboard.press("End")
-            page.wait_for_timeout(800)
+            page.wait_for_timeout(350)
             articles2 = page.query_selector_all("article[data-testid='tweet']")
             c2 = len(articles2)
             if c2 <= prev_count:
@@ -535,30 +535,28 @@ def list_all_tweets(username: str, headless: bool = False) -> List[Post]:
             page.goto(profile_url, wait_until="domcontentloaded")
             logging.info("Post-login navigation complete: %s", profile_url)
 
-        # Wait for tweets to be visible (best effort)
+        # Minimal waits (best effort): prefer direct collection
         try:
-            page.wait_for_selector("article[data-testid='tweet']", timeout=15000)
+            page.wait_for_selector("article[data-testid='tweet']", timeout=3000)
         except Exception:
-            # Fallback: many tweets contain text in div[lang]
             try:
-                page.wait_for_selector("div[lang]", timeout=15000)
+                page.wait_for_selector("div[lang]", timeout=2000)
             except Exception:
                 pass
 
         def _collect_articles() -> List[ElementHandle]:
-            # Allow content to settle
-            try:
-                page.wait_for_timeout(1000)
-                page.wait_for_load_state("networkidle")
-            except Exception:
-                pass
-            scroll_to_load(page)
-            # Broaden selectors to handle UI variants
+            # Try immediate collection first (no scroll)
             selectors = [
                 "article[data-testid='tweet']",
                 "div[data-testid='tweet']",
                 "article",
             ]
+            for sel in selectors:
+                items = page.query_selector_all(sel)
+                if items:
+                    return items
+            # If none, attempt limited scroll then re-collect
+            scroll_to_load(page, max_scrolls=8)
             for sel in selectors:
                 items = page.query_selector_all(sel)
                 if items:
@@ -603,7 +601,7 @@ def list_all_tweets(username: str, headless: bool = False) -> List[Post]:
                     logging.info("Retrying with alternate URL: %s", u)
                     page.goto(u, wait_until="domcontentloaded")
                     try:
-                        page.wait_for_selector("div[lang]", timeout=10000)
+                        page.wait_for_selector("div[lang]", timeout=3000)
                     except Exception:
                         pass
                     articles = _collect_articles()
@@ -625,7 +623,7 @@ def list_all_tweets(username: str, headless: bool = False) -> List[Post]:
                 page = context.new_page()
                 page.goto(profile_url, wait_until="domcontentloaded")
                 try:
-                    page.wait_for_selector("div[lang]", timeout=15000)
+                    page.wait_for_selector("div[lang]", timeout=3000)
                 except Exception:
                     pass
                 articles = _collect_articles()
