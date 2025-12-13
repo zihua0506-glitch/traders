@@ -18,6 +18,9 @@ from playwright.sync_api import (
 
 from models import Post
 from db import SentimentModel
+from collectors.base import BaseCollector
+from models.x_username import get_enabled_x_usernames
+from llm import analyze as llm_analyze
 
 
 def loginX(headless: bool = False) -> None:
@@ -482,7 +485,7 @@ def _is_login_wall(page: Page) -> bool:
     return False
 
 
-def list_all_tweets(username: str, headless: bool = False) -> List[Post]:
+def list_all_tweets(username: str, headless: bool = False, save: bool = True) -> List[Post]:
     """Open X user profile and collect all non-ad tweets.
 
     Flow:
@@ -671,14 +674,23 @@ def list_all_tweets(username: str, headless: bool = False) -> List[Post]:
                 is_text_truncated=bool(item.get("isTextTruncated") or False),
             )
 
-            # Auto-save with safe defaults; skip on unique conflicts
-            try:
-                # Use the model's own save method for simplicity
-                if not SentimentModel.exists_source_id("x", post.source_id):
-                    post.save()
-            except Exception:
-                # Keep scraping resilient; do not fail on DB errors
-                pass
+            # Optional persistence (default: enabled). When disabled, the caller
+            # can decide how and when to save, e.g. after LLM verification.
+            if save:
+                try:
+                    if not SentimentModel.exists_source_id("x", post.source_id):
+                        # Mandatory LLM verification before persistence
+                        result = llm_analyze(post)
+                        if result.get("is_valid"):
+                            post.save(
+                                sentiment=str(result.get("sentiment", "neutral")),
+                                tickers=list(result.get("tickers", []) or []),
+                                summary=str(result.get("summary", "")),
+                            )
+                        # If not valid, skip saving silently
+                except Exception:
+                    # Keep scraping resilient; do not fail on DB errors
+                    pass
 
             results.append(post)
 
@@ -686,3 +698,133 @@ def list_all_tweets(username: str, headless: bool = False) -> List[Post]:
         results.sort(key=lambda x: x.post_time, reverse=True)
         browser.close()
         return results
+
+
+class XCollector(BaseCollector):
+    """Collector wrapper for X/Twitter that enforces LLM verification before save.
+
+    This class preserves the existing scraping behavior by reusing
+    `list_all_tweets()` with `save=False`, then performs mandatory LLM
+    verification and persists only validated posts with the LLM results.
+    """
+
+    source_name: str = "x"
+
+    def llm_verify_post(self, text: str) -> dict:
+        """Run lightweight LLM verification and classification on raw text.
+
+        Returns a dict: {is_valid, sentiment, tickers, summary}.
+        """
+        # Build a minimal Post for analysis context
+        p = Post(
+            source=self.source_name,
+            source_id="temp-0",
+            source_url="https://x.com/",
+            content=text or "",
+            author_id="x",
+            author_name="x",
+            post_time=0,
+            likes=0,
+            comments=0,
+            shares=0,
+        )
+        return llm_analyze(p)
+
+    def fetch_by_symbol(self, symbol: str, limit: int = 50, since_ts: int = 0) -> List[dict]:
+        """X does not natively fetch by symbol; return empty list for now.
+
+        Future enhancement could filter fetched posts whose content mentions the
+        given symbol.
+        """
+        return []
+
+    def fetch_trending(self, limit: int = 50, since_ts: int = 0) -> List[dict]:
+        """Fetch recent posts from enabled X usernames and save after LLM verify.
+
+        - Uses `get_enabled_x_usernames()` to enumerate profiles
+        - Scrapes posts via `list_all_tweets(username, save=False)`
+        - Applies time window filter
+        - Runs LLM verification; only persists validated posts with LLM results
+        - Returns the list of validated Post objects (raw items for BaseCollector)
+        """
+        usernames: List[str]
+        try:
+            usernames = get_enabled_x_usernames()
+        except Exception:
+            usernames = []
+
+        validated: List[Post] = []
+        for uname in usernames[:]:
+            try:
+                posts = list_all_tweets(uname, headless=False, save=False)
+            except Exception:
+                posts = []
+
+            # Time filter
+            if since_ts:
+                posts = [p for p in posts if int(getattr(p, "post_time", 0) or 0) >= since_ts]
+
+            # Enforce LLM verification before save
+            for p in posts[:limit]:
+                try:
+                    result = llm_analyze(p)
+                except Exception:
+                    result = {
+                        "is_valid": False,
+                        "sentiment": "neutral",
+                        "tickers": [],
+                        "summary": "",
+                    }
+
+                if not result.get("is_valid"):
+                    # Skip persistence if verification fails
+                    continue
+
+                # Persist with LLM outputs if not already saved
+                try:
+                    if not SentimentModel.exists_source_id("x", p.source_id):
+                        p.save(
+                            sentiment=str(result.get("sentiment", "neutral")),
+                            tickers=list(result.get("tickers", []) or []),
+                            summary=str(result.get("summary", "")),
+                        )
+                except Exception:
+                    # Persistence errors are non-fatal for collection
+                    pass
+
+                validated.append(p)
+
+        return validated
+
+    def _to_post(self, raw: dict) -> Post:
+        """Convert raw item to Post. Accepts Post passthrough or dict mapping."""
+        if isinstance(raw, Post):
+            return raw
+        # Minimal mapping for dict inputs (best-effort)
+        return Post(
+            source=str(raw.get("source", self.source_name)),
+            source_id=str(raw.get("source_id", "")),
+            source_url=str(raw.get("source_url", "")),
+            content=str(raw.get("content", "")),
+            author_id=str(raw.get("author_id", "")),
+            author_name=str(raw.get("author_name", "")),
+            post_time=int(raw.get("post_time", 0) or 0),
+            likes=int(raw.get("likes", 0) or 0),
+            comments=int(raw.get("comments", 0) or 0),
+            shares=int(raw.get("shares", 0) or 0),
+            bookmarks=int(raw.get("bookmarks", 0) or 0),
+            views=int(raw.get("views", 0) or 0),
+            images=list(raw.get("images", []) or []),
+            video_url=str(raw.get("video_url", "")),
+            quoted_url=str(raw.get("quoted_url", "")),
+            is_retweet=bool(raw.get("is_retweet", False)),
+            is_reply=bool(raw.get("is_reply", False)),
+            original_source_id=str(raw.get("original_source_id", "")),
+            region=str(raw.get("region", "")),
+            is_pinned=bool(raw.get("is_pinned", False)),
+            is_ad=bool(raw.get("is_ad", False)),
+            mentions=list(raw.get("mentions", []) or []),
+            urls=list(raw.get("urls", []) or []),
+            video_duration=str(raw.get("video_duration", "")),
+            is_text_truncated=bool(raw.get("is_text_truncated", False)),
+        )
