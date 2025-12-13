@@ -67,7 +67,7 @@ def test_db_save_post() -> bool:
         original_source_id="",
     )
 
-    ok = dbmod.SentimentModel.save(post, sentiment="neutral", tickers=[], summary="")
+    ok = post.save()
     assert ok, "DB save should succeed"
 
     exists = dbmod.SentimentModel.exists_source_id("x", "1234567890")
@@ -89,4 +89,3 @@ def run():
 
 if __name__ == "__main__":
     run()
-

@@ -64,6 +64,20 @@ class Post:
         content_bytes = self.content.encode("utf-8", errors="ignore")
         return sha256(content_bytes).hexdigest()
 
+    def save(self, sentiment: str = "neutral", tickers: list[str] | None = None, summary: str = "") -> bool:
+        """Persist this post into the SQLite database via the DB facade.
+
+        Returns True on success, False on unique conflicts or insert failure.
+        """
+        if tickers is None:
+            tickers = []
+        try:
+            # Lazy import to avoid circular import at module load time
+            from db import SentimentModel
+        except Exception as e:
+            raise RuntimeError("DB layer unavailable for saving Post") from e
+        return SentimentModel.save(self, sentiment=sentiment, tickers=tickers, summary=summary)
+
 
 __all__ = ["Post"]
 

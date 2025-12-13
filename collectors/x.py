@@ -552,8 +552,9 @@ def list_all_tweets(username: str, headless: bool = False) -> List[Post]:
 
             # Auto-save with safe defaults; skip on unique conflicts
             try:
+                # Use the model's own save method for simplicity
                 if not SentimentModel.exists_source_id("x", post.source_id):
-                    SentimentModel.save(post, sentiment="neutral", tickers=[], summary="")
+                    post.save()
             except Exception:
                 # Keep scraping resilient; do not fail on DB errors
                 pass
