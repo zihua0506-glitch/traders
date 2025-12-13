@@ -131,6 +131,11 @@ def init_db() -> None:
     db.create_tables([IndexStock, SentimentPost, XUsername])
     # Ensure additional indexes beyond Peewee's table creation
     try:
+        ensure_db_columns()
+    except Exception:
+        # Avoid crashing on column migration; keep MVP resilient
+        pass
+    try:
         ensure_db_indexes()
     except Exception:
         # Avoid crashing on index creation (e.g., duplicates present); keep MVP resilient
@@ -148,6 +153,29 @@ def ensure_db_indexes() -> None:
     db.execute_sql(
         f"CREATE UNIQUE INDEX IF NOT EXISTS {idx_name} ON {table_name} (source_id)"
     )
+
+def ensure_db_columns() -> None:
+    """Ensure new columns exist on SentimentPost for extended metadata.
+
+    Adds missing columns using SQLite ALTER TABLE with sensible defaults.
+    """
+    table = SentimentPost._meta.table_name
+    cols = _get_table_columns(table)
+
+    def add(col: str, ddl: str):
+        if col not in cols:
+            db.execute_sql(f"ALTER TABLE {table} ADD COLUMN {ddl}")
+
+    # Extended media and relation fields
+    add("bookmarks", "bookmarks INTEGER DEFAULT 0")
+    add("views", "views INTEGER DEFAULT 0")
+    # JSONField in Peewee maps to TEXT under SQLite; default to '[]'
+    add("images", "images TEXT DEFAULT '[]'")
+    add("video_url", "video_url TEXT DEFAULT ''")
+    add("quoted_url", "quoted_url TEXT DEFAULT ''")
+    add("is_retweet", "is_retweet INTEGER DEFAULT 0")
+    add("is_reply", "is_reply INTEGER DEFAULT 0")
+    add("original_source_id", "original_source_id TEXT DEFAULT ''")
 
 
 def save_post(post: Post, sentiment: str, tickers: List[str], summary: str) -> bool:
