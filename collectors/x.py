@@ -4,6 +4,7 @@ import subprocess
 import time
 import urllib.request
 import json
+from datetime import datetime
 
 import os
 from dotenv import load_dotenv
@@ -13,6 +14,9 @@ from playwright.sync_api import (
     Page,
     ElementHandle,
 )
+
+from models import Post
+from db import SentimentModel
 
 
 def loginX(headless: bool = False) -> None:
@@ -445,7 +449,7 @@ def _is_login_wall(page: Page) -> bool:
     return False
 
 
-def list_all_tweets(username: str, headless: bool = False) -> List[Dict[str, str]]:
+def list_all_tweets(username: str, headless: bool = False) -> List[Post]:
     """Open X user profile and collect all non-ad tweets.
 
     Flow:
@@ -453,25 +457,25 @@ def list_all_tweets(username: str, headless: bool = False) -> List[Dict[str, str
     2. If login wall or not authenticated, call loginX(), then retry.
     3. Scroll to load, extract tweets, filter ads, return list of dicts (string values).
 
-    Returns list of dictionaries with keys like time, text, link, counts, etc.
-    All values are converted to strings for consistency.
+    Returns a list of `Post` objects. Each post is also auto-saved into the
+    database using neutral sentiment and empty tickers/summary by default.
     """
     load_dotenv()
     cdp_url = os.getenv("X_CDP_URL", "http://localhost:9222")
     profile_url = f"https://x.com/{username}"
 
-    def _stringify(item: Dict[str, Any]) -> Dict[str, str]:
-        out: Dict[str, str] = {}
-        for k, v in item.items():
-            if isinstance(v, (list, dict)):
-                out[k] = json.dumps(v, ensure_ascii=False)
-            elif isinstance(v, bool):
-                out[k] = "true" if v else "false"
-            elif v is None:
-                out[k] = ""
-            else:
-                out[k] = str(v)
-        return out
+    def _iso_to_unix(ts: Optional[str]) -> int:
+        if not ts:
+            return 0
+        try:
+            s = ts.strip()
+            # Handle trailing 'Z' by converting to +00:00
+            if s.endswith("Z"):
+                s = s[:-1] + "+00:00"
+            dt = datetime.fromisoformat(s)
+            return int(dt.timestamp())
+        except Exception:
+            return 0
 
     with sync_playwright() as p:
         browser = p.chromium.connect_over_cdp(cdp_url)
@@ -507,7 +511,7 @@ def list_all_tweets(username: str, headless: bool = False) -> List[Dict[str, str
             articles = page.query_selector_all("article")
 
         seen: set[str] = set()
-        results: List[Dict[str, str]] = []
+        results: List[Post] = []
 
         for article in articles:
             item = extract_tweet(article, username)
@@ -517,9 +521,46 @@ def list_all_tweets(username: str, headless: bool = False) -> List[Dict[str, str
             if not key or key in seen:
                 continue
             seen.add(key)
-            results.append(_stringify(item))
+            # Build Post model
+            post = Post(
+                source="x",
+                source_id=item.get("tweetId", "") or key,
+                source_url=item.get("link", ""),
+                content=item.get("text", ""),
+                author_id=(item.get("originalAuthor") or username) or username,
+                author_name=(item.get("originalAuthor") or username) or username,
+                post_time=_iso_to_unix(item.get("time")),
+                likes=int(item.get("likes") or 0) if item.get("likes") is not None else 0,
+                comments=int(item.get("replies") or 0) if item.get("replies") is not None else 0,
+                shares=int(item.get("reposts") or 0) if item.get("reposts") is not None else 0,
+                bookmarks=int(item.get("bookmarks") or 0) if item.get("bookmarks") is not None else 0,
+                views=int(item.get("views") or 0) if item.get("views") is not None else 0,
+                images=list(item.get("images") or []),
+                video_url="",
+                quoted_url=(item.get("quotedTweet", {}) or {}).get("link", ""),
+                is_retweet=bool(item.get("isRepost") or False),
+                is_reply=False,
+                original_source_id="",
+                region=str(item.get("source") or ""),
+                is_pinned=bool(item.get("isPinned") or False),
+                is_ad=bool(item.get("isAd") or False),
+                mentions=list(item.get("mentions") or []),
+                urls=list(item.get("urls") or []),
+                video_duration=str(item.get("videoDuration") or ""),
+                is_text_truncated=bool(item.get("isTextTruncated") or False),
+            )
 
-        # Sort by time desc (string ISO)
-        results.sort(key=lambda x: x.get("time", ""), reverse=True)
+            # Auto-save with safe defaults; skip on unique conflicts
+            try:
+                if not SentimentModel.exists_source_id("x", post.source_id):
+                    SentimentModel.save(post, sentiment="neutral", tickers=[], summary="")
+            except Exception:
+                # Keep scraping resilient; do not fail on DB errors
+                pass
+
+            results.append(post)
+
+        # Sort by post_time desc
+        results.sort(key=lambda x: x.post_time, reverse=True)
         browser.close()
         return results

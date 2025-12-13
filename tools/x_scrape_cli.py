@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from collectors.x import list_all_tweets
+from models import Post
 
 
 PORT = 9222
@@ -122,15 +123,44 @@ def main():
 
     # Scrape tweets
     try:
-        tweets = list_all_tweets(args.username, headless=args.headless)
+        posts: list[Post] = list_all_tweets(args.username, headless=args.headless)
     except Exception as e:
         print(f"Scrape failed: {e}")
         sys.exit(1)
 
+    def to_dict(p: Post) -> dict:
+        return {
+            "source": p.source,
+            "source_id": p.source_id,
+            "source_url": p.source_url,
+            "content": p.content,
+            "author_id": p.author_id,
+            "author_name": p.author_name,
+            "post_time": p.post_time,
+            "likes": p.likes,
+            "comments": p.comments,
+            "shares": p.shares,
+            "bookmarks": p.bookmarks,
+            "views": p.views,
+            "images": p.images,
+            "video_url": p.video_url,
+            "quoted_url": p.quoted_url,
+            "is_retweet": p.is_retweet,
+            "is_reply": p.is_reply,
+            "original_source_id": p.original_source_id,
+            "region": p.region,
+            "is_pinned": p.is_pinned,
+            "is_ad": p.is_ad,
+            "mentions": p.mentions,
+            "urls": p.urls,
+            "video_duration": p.video_duration,
+            "is_text_truncated": p.is_text_truncated,
+        }
+
     output = {
         "username": args.username,
-        "count": len(tweets),
-        "tweets": tweets,
+        "count": len(posts),
+        "posts": [to_dict(p) for p in posts],
     }
     print(json.dumps(output, ensure_ascii=False, indent=2))
 

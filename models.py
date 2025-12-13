@@ -45,6 +45,15 @@ class Post:
     is_reply: bool = False
     original_source_id: str = ""
 
+    # Optional extended metadata (non-persisted or partially persisted)
+    region: str = ""
+    is_pinned: bool = False
+    is_ad: bool = False
+    mentions: list[str] = field(default_factory=list)
+    urls: list[str] = field(default_factory=list)
+    video_duration: str = ""
+    is_text_truncated: bool = False
+
     @property
     def content_hash(self) -> str:
         """Stable hexadecimal hash derived only from `content`.
