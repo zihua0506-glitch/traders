@@ -344,6 +344,7 @@ def extract_tweet(article: ElementHandle, target_username: str) -> Optional[Dict
 
     status_links = article.query_selector_all("a[href*='/status/']")
     href: Optional[str] = None
+    tweet_id: Optional[str] = None
     original_author: Optional[str] = None
 
     for link in status_links:
@@ -354,6 +355,8 @@ def extract_tweet(article: ElementHandle, target_username: str) -> Optional[Dict
             m = re.search(r"/([^/]+)/status/(\d+)", link_href)
             if m:
                 author = m.group(1)
+                tid = m.group(2)
+                tweet_id = tid
                 if is_repost or author != target_username:
                     original_author = author
             href = link_href
@@ -389,6 +392,7 @@ def extract_tweet(article: ElementHandle, target_username: str) -> Optional[Dict
     return {
         "time": time_str or "",
         "text": text or "",
+        "tweetId": tweet_id or "",
         "images": images,
         "replies": counts.get("replies"),
         "reposts": counts.get("reposts"),
@@ -509,7 +513,7 @@ def list_all_tweets(username: str, headless: bool = False) -> List[Dict[str, str
             item = extract_tweet(article, username)
             if not item:
                 continue
-            key = item.get("link") or ""
+            key = item.get("tweetId") or item.get("link") or ""
             if not key or key in seen:
                 continue
             seen.add(key)
