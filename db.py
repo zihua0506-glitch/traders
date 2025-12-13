@@ -74,7 +74,9 @@ class SentimentPost(BaseModel):
 
     # Source metadata
     source = CharField(max_length=64)
-    source_id = CharField(max_length=128)
+    # Keep model field non-unique to avoid migration-time crashes on existing data.
+    # We still enforce uniqueness via a runtime-created DB index in `ensure_db_indexes()`.
+    source_id = CharField(max_length=128, index=True)
     source_url = CharField(max_length=512)
 
     # Content and dedupe hash
@@ -127,6 +129,25 @@ def init_db() -> None:
     """Initialize database and create tables if missing."""
     db.connect(reuse_if_open=True)
     db.create_tables([IndexStock, SentimentPost, XUsername])
+    # Ensure additional indexes beyond Peewee's table creation
+    try:
+        ensure_db_indexes()
+    except Exception:
+        # Avoid crashing on index creation (e.g., duplicates present); keep MVP resilient
+        pass
+
+def ensure_db_indexes() -> None:
+    """Create a unique index on `source_id` if it does not exist.
+
+    Peewee won't auto-migrate existing tables for field changes. This helper
+    creates the unique index at runtime for SQLite.
+    """
+    table_name = SentimentPost._meta.table_name
+    idx_name = f"{table_name}_source_id_uniq"
+    # SQLite supports IF NOT EXISTS for CREATE INDEX
+    db.execute_sql(
+        f"CREATE UNIQUE INDEX IF NOT EXISTS {idx_name} ON {table_name} (source_id)"
+    )
 
 
 def save_post(post: Post, sentiment: str, tickers: List[str], summary: str) -> bool:
