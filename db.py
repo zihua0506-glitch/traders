@@ -176,32 +176,37 @@ class SentimentModel:
             raise TypeError("tickers must be a list of strings")
 
         now_ts = int(datetime.utcnow().timestamp())
+        # Build row data and filter by actual DB columns to avoid migration issues
+        row = {
+            "source": post.source,
+            "source_id": post.source_id,
+            "source_url": post.source_url,
+            "content": post.content,
+            "content_hash": post.content_hash,
+            "sentiment": sentiment,
+            "tickers": tickers,
+            "summary": summary,
+            "author_id": post.author_id,
+            "author_name": post.author_name,
+            "post_time": post.post_time,
+            "likes": post.likes,
+            "comments": post.comments,
+            "shares": post.shares,
+            "bookmarks": getattr(post, "bookmarks", 0) or 0,
+            "views": getattr(post, "views", 0) or 0,
+            "images": getattr(post, "images", None) or [],
+            "video_url": getattr(post, "video_url", "") or "",
+            "quoted_url": getattr(post, "quoted_url", "") or "",
+            "is_retweet": 1 if getattr(post, "is_retweet", False) else 0,
+            "is_reply": 1 if getattr(post, "is_reply", False) else 0,
+            "original_source_id": getattr(post, "original_source_id", "") or "",
+            "created_at": now_ts,
+        }
+
         try:
-            SentimentPost.create(
-                source=post.source,
-                source_id=post.source_id,
-                source_url=post.source_url,
-                content=post.content,
-                content_hash=post.content_hash,
-                sentiment=sentiment,
-                tickers=tickers,
-                summary=summary,
-                author_id=post.author_id,
-                author_name=post.author_name,
-                post_time=post.post_time,
-                likes=post.likes,
-                comments=post.comments,
-                shares=post.shares,
-                bookmarks=getattr(post, "bookmarks", 0) or 0,
-                views=getattr(post, "views", 0) or 0,
-                images=getattr(post, "images", None) or [],
-                video_url=getattr(post, "video_url", "") or "",
-                quoted_url=getattr(post, "quoted_url", "") or "",
-                is_retweet=1 if getattr(post, "is_retweet", False) else 0,
-                is_reply=1 if getattr(post, "is_reply", False) else 0,
-                original_source_id=getattr(post, "original_source_id", "") or "",
-                created_at=now_ts,
-            )
+            cols = _get_table_columns(SentimentPost._meta.table_name)
+            filtered = {k: v for k, v in row.items() if k in cols}
+            SentimentPost.create(**filtered)
             return True
         except IntegrityError:
             return False
@@ -222,6 +227,13 @@ class SentimentModel:
                 .select()
                 .where((SentimentPost.source == source) & (SentimentPost.source_id == source_id))
                 ).exists()
+
+
+def _get_table_columns(table_name: str) -> set:
+    """Return set of column names for the given table using SQLite PRAGMA."""
+    rows = db.execute_sql(f"PRAGMA table_info({table_name})").fetchall()
+    # Column name is at index 1
+    return {row[1] for row in rows}
 
 
 def validate_fields_integrity(limit: int = 10) -> bool:
