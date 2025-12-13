@@ -7,7 +7,10 @@ import platform
 import subprocess
 import socket
 import time
+import random
+import logging
 import urllib.request
+from typing import List, Optional, Tuple, Dict
 from dotenv import load_dotenv
 
 # Ensure repo root is on sys.path for package imports when running as a script
@@ -15,6 +18,7 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from collectors.x import list_all_tweets
 from models import Post
+from models.x_username import get_enabled_x_usernames
 
 
 PORT = 9222
@@ -22,12 +26,12 @@ PORT = 9222
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Scrape tweets from an X user profile via Playwright/CDP"
+        description="Scrape tweets from X user profiles via Playwright/CDP"
     )
     parser.add_argument(
         "--username",
-        default="elonmusk",
-        help="X username to scrape (default: elonmusk)",
+        default=None,
+        help="X username to scrape; if omitted, scrape all enabled usernames from DB",
     )
     parser.add_argument(
         "--headless",
@@ -36,10 +40,17 @@ def main():
     )
     args = parser.parse_args()
 
+    # Configure logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(message)s",
+    )
+    logging.info("Starting X scrape CLI")
+
     load_dotenv()
     profile_dir = os.getenv("play_wright_profile_path")
     if not profile_dir:
-        print("Environment variable 'play_wright_profile_path' is required")
+        logging.error("Environment variable 'play_wright_profile_path' is required")
         sys.exit(1)
 
     def port_open(port: int) -> bool:
@@ -62,7 +73,7 @@ def main():
             time.sleep(0.5)
         return False
 
-    def find_chrome_pid(profile: str, port: int) -> int | None:
+    def find_chrome_pid(profile: str, port: int) -> Optional[int]:
         try:
             # macOS / Linux process scan
             if platform.system() == "Darwin":
@@ -81,7 +92,7 @@ def main():
             pass
         return None
 
-    def launch_chrome_cdp(profile: str, port: int = PORT, headless: bool = False) -> tuple[subprocess.Popen | None, int | None]:
+    def launch_chrome_cdp(profile: str, port: int = PORT, headless: bool = False) -> Tuple[Optional[subprocess.Popen], Optional[int]]:
         if port_open(port):
             return None, None
         chrome_path = os.getenv("CHROME_PATH") or (
@@ -95,7 +106,7 @@ def main():
         if headless:
             # Use headless mode for Chrome; 'new' is recommended in modern versions
             args.append("--headless=new")
-        proc: subprocess.Popen | None = None
+        proc: Optional[subprocess.Popen] = None
         try:
             proc = subprocess.Popen([chrome_path] + args)
         except Exception:
@@ -113,20 +124,57 @@ def main():
         return proc, pid
 
     # Launch Chrome with CDP (self-managed) and set X_CDP_URL
+    logging.info("Launching Chrome with CDP on port %s", PORT)
     try:
         proc, pid = launch_chrome_cdp(profile_dir, PORT, headless=args.headless)
     except Exception as e:
-        print(f"Failed to launch Chrome with CDP: {e}")
+        logging.exception("Failed to launch Chrome with CDP: %s", e)
         sys.exit(1)
 
     os.environ["X_CDP_URL"] = f"http://localhost:{PORT}"
 
     # Scrape tweets
-    try:
-        posts: list[Post] = list_all_tweets(args.username, headless=args.headless)
-    except Exception as e:
-        print(f"Scrape failed: {e}")
-        sys.exit(1)
+    usernames: List[str]
+    if args.username:
+        usernames = [args.username]
+        logging.info("Scraping single username: %s", args.username)
+    else:
+        logging.info("No username provided; fetching enabled usernames from DB")
+        try:
+            usernames = get_enabled_x_usernames()
+        except Exception as e:
+            logging.exception("Failed to fetch usernames from DB: %s", e)
+            sys.exit(1)
+        if not usernames:
+            logging.warning("No enabled usernames found in DB; exiting")
+            # Close Chrome before exit
+            try:
+                if proc is not None:
+                    proc.terminate()
+            except Exception:
+                pass
+            sys.exit(0)
+
+    posts_by_username: Dict[str, List[Post]] = {}
+    for i, uname in enumerate(usernames, start=1):
+        logging.info("[%d/%d] Begin scraping: %s", i, len(usernames), uname)
+        try:
+            posts_by_username[uname] = list_all_tweets(uname, headless=args.headless)
+            logging.info(
+                "[%d/%d] Scraped %d posts for %s",
+                i,
+                len(usernames),
+                len(posts_by_username[uname]),
+                uname,
+            )
+        except Exception as e:
+            logging.exception("[%d/%d] Scrape failed for %s: %s", i, len(usernames), uname, e)
+            posts_by_username[uname] = []
+
+        if i < len(usernames):
+            delay = random.randint(1, 5)
+            logging.info("Sleeping %ds before next username", delay)
+            time.sleep(delay)
 
     def to_dict(p: Post) -> dict:
         return {
@@ -157,20 +205,33 @@ def main():
             "is_text_truncated": p.is_text_truncated,
         }
 
-    output = {
-        "username": args.username,
-        "count": len(posts),
-        "posts": [to_dict(p) for p in posts],
-    }
+    if args.username:
+        # Backward-compatible single-username output
+        posts = posts_by_username.get(args.username, [])
+        output = {
+            "username": args.username,
+            "count": len(posts),
+            "posts": [to_dict(p) for p in posts],
+        }
+    else:
+        # Multi-username aggregated output
+        output = {
+            "usernames": usernames,
+            "total_count": sum(len(v) for v in posts_by_username.values()),
+            "by_username": {u: [to_dict(p) for p in posts_by_username.get(u, [])] for u in usernames},
+        }
+    logging.info("Scrape complete; printing JSON summary")
     print(json.dumps(output, ensure_ascii=False, indent=2))
 
     # Close only the Chrome instance we launched
     try:
+        logging.info("Shutting down Chrome process")
         if proc is not None:
             proc.terminate()
             try:
                 proc.wait(timeout=5)
             except Exception:
+                logging.warning("Terminate timeout; killing Chrome process")
                 proc.kill()
         elif pid is not None:
             # Graceful, then force
@@ -178,13 +239,13 @@ def main():
                 os.kill(pid, 15)
                 time.sleep(1)
             except Exception:
-                pass
+                logging.debug("SIGTERM failed or not applicable")
             try:
                 os.kill(pid, 9)
             except Exception:
-                pass
+                logging.debug("SIGKILL failed or not applicable")
     except Exception:
-        pass
+        logging.exception("Error while shutting down Chrome")
 
 
 if __name__ == "__main__":

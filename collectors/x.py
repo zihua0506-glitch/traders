@@ -7,6 +7,7 @@ import json
 from datetime import datetime
 
 import os
+import logging
 from dotenv import load_dotenv
 from playwright.sync_api import (
     sync_playwright,
@@ -152,21 +153,44 @@ MULTIPLIERS = {
 
 
 def parse_compact_number(s: Optional[str]) -> Optional[int]:
-    """Parse numbers like '1.1K', '6.1M', '123' into int or None."""
+    """Parse numbers like '1.1K', '6.1M', '123' into int or None.
+
+    Robust to labels like 'Views 1,234' or '1,234 views'. Avoids recursion.
+    """
     if not s:
         return None
-    s = s.strip().replace(",", "")
-    m = COMPACT_NUM_RE.match(s)
-    if not m:
-        parts = s.split()
-        if parts:
-            return parse_compact_number(parts[0])
-        return None
-    num, suffix = m.groups()
-    value = float(num)
-    if suffix:
-        value *= MULTIPLIERS.get(suffix.upper(), 1)
-    return int(value)
+    s_norm = s.strip().replace(",", "")
+
+    # Direct match
+    m = COMPACT_NUM_RE.match(s_norm)
+    if m:
+        num, suffix = m.groups()
+        value = float(num)
+        if suffix:
+            value *= MULTIPLIERS.get(suffix.upper(), 1)
+        return int(value)
+
+    # Try tokens (prefer last token to catch 'Views 123')
+    tokens = s_norm.split()
+    for tok in reversed(tokens):
+        m = COMPACT_NUM_RE.match(tok)
+        if m:
+            num, suffix = m.groups()
+            value = float(num)
+            if suffix:
+                value *= MULTIPLIERS.get(suffix.upper(), 1)
+            return int(value)
+
+    # Fallback: find any number-like pattern within the string
+    m = re.search(r"([0-9]+(?:\.[0-9]+)?)([KMB])?", s_norm, re.IGNORECASE)
+    if m:
+        num, suffix = m.groups()
+        value = float(num)
+        if suffix:
+            value *= MULTIPLIERS.get(suffix.upper(), 1)
+        return int(value)
+
+    return None
 
 
 def extract_mentions(text: str) -> List[str]:
@@ -439,13 +463,22 @@ def scroll_to_load(page: Page, max_scrolls: int = 30) -> None:
 
 
 def _is_login_wall(page: Page) -> bool:
+    # URL-based detection
     if "/login" in page.url or "/i/flow/" in page.url:
         return True
+    # Modal detection
     modal = page.query_selector("[role='dialog'][aria-modal='true']")
     if modal:
         modal_text = modal.inner_text().lower()
-        if any(kw in modal_text for kw in ["sign in", "log in", "create account"]):
+        if any(kw in modal_text for kw in ["sign in", "log in", "create account", "join", "continue"]):
             return True
+    # Body text detection as fallback
+    try:
+        body_text = page.inner_text("body").lower()
+        if any(kw in body_text for kw in ["log in", "sign in", "create account", "to view posts", "see more"]):
+            return True
+    except Exception:
+        pass
     return False
 
 
@@ -487,8 +520,10 @@ def list_all_tweets(username: str, headless: bool = False) -> List[Post]:
         page = context.new_page()
 
         page.goto(profile_url, wait_until="domcontentloaded")
+        logging.info("Navigated to profile: %s", profile_url)
 
         if _is_login_wall(page) or not _has_auth_cookies(context):
+            logging.info("Login required; performing login flow")
             browser.close()
             # Perform login via existing CDP session
             loginX(headless=headless)
@@ -498,17 +533,105 @@ def list_all_tweets(username: str, headless: bool = False) -> List[Post]:
             context.set_default_timeout(30000)
             page = context.new_page()
             page.goto(profile_url, wait_until="domcontentloaded")
+            logging.info("Post-login navigation complete: %s", profile_url)
 
         # Wait for tweets to be visible (best effort)
         try:
             page.wait_for_selector("article[data-testid='tweet']", timeout=15000)
         except Exception:
-            pass
+            # Fallback: many tweets contain text in div[lang]
+            try:
+                page.wait_for_selector("div[lang]", timeout=15000)
+            except Exception:
+                pass
 
-        scroll_to_load(page)
-        articles = page.query_selector_all("article[data-testid='tweet']")
+        def _collect_articles() -> List[ElementHandle]:
+            # Allow content to settle
+            try:
+                page.wait_for_timeout(1000)
+                page.wait_for_load_state("networkidle")
+            except Exception:
+                pass
+            scroll_to_load(page)
+            # Broaden selectors to handle UI variants
+            selectors = [
+                "article[data-testid='tweet']",
+                "div[data-testid='tweet']",
+                "article",
+            ]
+            for sel in selectors:
+                items = page.query_selector_all(sel)
+                if items:
+                    return items
+            return []
+
+        articles = _collect_articles()
+        logging.info("Found %d tweet articles initially", len(articles))
+
+        # If none found, try switching to the Posts tab, then retry once
         if not articles:
-            articles = page.query_selector_all("article")
+            try:
+                logging.info("No articles found; attempting to select 'Posts' tab")
+                # Try common tab selectors
+                tab = None
+                try:
+                    tab = page.get_by_role("link", name=re.compile("Posts", re.I))
+                    if tab.count() > 0:
+                        tab.first.click()
+                        page.wait_for_timeout(800)
+                except Exception:
+                    pass
+                if not tab or tab.count() == 0:
+                    el = page.locator("[role='tab']:has-text('Posts')").first
+                    if el.count() > 0:
+                        el.click()
+                        page.wait_for_timeout(800)
+                # Retry collect
+                articles = _collect_articles()
+                logging.info("After selecting 'Posts', found %d articles", len(articles))
+            except Exception:
+                logging.debug("Selecting 'Posts' tab failed; proceeding without tab switch")
+
+        # If still none, try alternate URLs for profile (live/latest or enforce English)
+        if not articles:
+            try:
+                alt_urls = [
+                    f"{profile_url}?f=live",
+                    f"{profile_url}?lang=en",
+                ]
+                for u in alt_urls:
+                    logging.info("Retrying with alternate URL: %s", u)
+                    page.goto(u, wait_until="domcontentloaded")
+                    try:
+                        page.wait_for_selector("div[lang]", timeout=10000)
+                    except Exception:
+                        pass
+                    articles = _collect_articles()
+                    logging.info("Alt URL found %d articles", len(articles))
+                    if articles:
+                        break
+            except Exception:
+                logging.debug("Alternate URL navigation failed; proceeding")
+
+        # If still none, try re-login once (cookies may be stale)
+        if not articles:
+            try:
+                logging.info("Still no articles; retrying after login refresh")
+                browser.close()
+                loginX(headless=headless)
+                browser = p.chromium.connect_over_cdp(cdp_url)
+                context = browser.contexts[0]
+                context.set_default_timeout(30000)
+                page = context.new_page()
+                page.goto(profile_url, wait_until="domcontentloaded")
+                try:
+                    page.wait_for_selector("div[lang]", timeout=15000)
+                except Exception:
+                    pass
+                articles = _collect_articles()
+                logging.info("Post re-login, found %d articles", len(articles))
+            except Exception:
+                logging.debug("Re-login refresh failed; continuing")
 
         seen: set[str] = set()
         results: List[Post] = []
