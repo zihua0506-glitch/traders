@@ -23,7 +23,7 @@ from models.x_username import get_enabled_x_usernames
 from llm import analyze as llm_analyze
 
 
-def loginX(headless: bool = False) -> None:
+def _login_x(headless: bool = False) -> None:
     """Login to X (Twitter) by connecting to a running Chrome via CDP.
 
     Expects you to start Chrome manually with remote debugging and the desired
@@ -140,22 +140,22 @@ def _has_auth_cookies(context) -> bool:
 
 
 # ===== Helpers ported from spec (sync API) =====
-COMPACT_NUM_RE = re.compile(r"^([0-9]+(?:\.[0-9]+)?)([KMB])?$", re.IGNORECASE)
-MENTION_RE = re.compile(r"@[\w]+")
-URL_RE = re.compile(r"https?://[^\s]+")
-GROUP_COUNTS_RE = re.compile(
+_COMPACT_NUM_RE = re.compile(r"^([0-9]+(?:\.[0-9]+)?)([KMB])?$", re.IGNORECASE)
+_MENTION_RE = re.compile(r"@[\w]+")
+_URL_RE = re.compile(r"https?://[^\s]+")
+_GROUP_COUNTS_RE = re.compile(
     r"(\d+)\s*replies.*?(\d+)\s*reposts.*?(\d+)\s*likes.*?(\d+)\s*bookmarks.*?(\d+)\s*views",
     re.IGNORECASE,
 )
 
-MULTIPLIERS = {
+_MULTIPLIERS = {
     "K": 1_000,
     "M": 1_000_000,
     "B": 1_000_000_000,
 }
 
 
-def parse_compact_number(s: Optional[str]) -> Optional[int]:
+def _parse_compact_number(s: Optional[str]) -> Optional[int]:
     """Parse numbers like '1.1K', '6.1M', '123' into int or None.
 
     Robust to labels like 'Views 1,234' or '1,234 views'. Avoids recursion.
@@ -165,23 +165,23 @@ def parse_compact_number(s: Optional[str]) -> Optional[int]:
     s_norm = s.strip().replace(",", "")
 
     # Direct match
-    m = COMPACT_NUM_RE.match(s_norm)
+    m = _COMPACT_NUM_RE.match(s_norm)
     if m:
         num, suffix = m.groups()
         value = float(num)
         if suffix:
-            value *= MULTIPLIERS.get(suffix.upper(), 1)
+            value *= _MULTIPLIERS.get(suffix.upper(), 1)
         return int(value)
 
     # Try tokens (prefer last token to catch 'Views 123')
     tokens = s_norm.split()
     for tok in reversed(tokens):
-        m = COMPACT_NUM_RE.match(tok)
+        m = _COMPACT_NUM_RE.match(tok)
         if m:
             num, suffix = m.groups()
             value = float(num)
             if suffix:
-                value *= MULTIPLIERS.get(suffix.upper(), 1)
+                value *= _MULTIPLIERS.get(suffix.upper(), 1)
             return int(value)
 
     # Fallback: find any number-like pattern within the string
@@ -190,21 +190,21 @@ def parse_compact_number(s: Optional[str]) -> Optional[int]:
         num, suffix = m.groups()
         value = float(num)
         if suffix:
-            value *= MULTIPLIERS.get(suffix.upper(), 1)
+            value *= _MULTIPLIERS.get(suffix.upper(), 1)
         return int(value)
 
     return None
 
 
-def extract_mentions(text: str) -> List[str]:
-    return MENTION_RE.findall(text) if text else []
+def _extract_mentions(text: str) -> List[str]:
+    return _MENTION_RE.findall(text) if text else []
 
 
-def extract_urls(text: str) -> List[str]:
-    return URL_RE.findall(text) if text else []
+def _extract_urls(text: str) -> List[str]:
+    return _URL_RE.findall(text) if text else []
 
 
-def is_ad_tweet(article: ElementHandle) -> bool:
+def _is_ad_tweet(article: ElementHandle) -> bool:
     text = article.inner_text()
     lines = text.split("\n")
     for line in lines[:10]:
@@ -213,7 +213,7 @@ def is_ad_tweet(article: ElementHandle) -> bool:
     return False
 
 
-def get_repost_info(article: ElementHandle) -> Tuple[bool, Optional[str]]:
+def _get_repost_info(article: ElementHandle) -> Tuple[bool, Optional[str]]:
     text = article.inner_text()
     m = re.match(r"^(.+?)\s+reposted", text, re.IGNORECASE)
     if m:
@@ -221,7 +221,7 @@ def get_repost_info(article: ElementHandle) -> Tuple[bool, Optional[str]]:
     return False, None
 
 
-def get_region_and_pinned(article: ElementHandle) -> Tuple[str, bool]:
+def _get_region_and_pinned(article: ElementHandle) -> Tuple[str, bool]:
     region = article.evaluate(
         """
         (el) => {
@@ -245,14 +245,14 @@ def get_region_and_pinned(article: ElementHandle) -> Tuple[str, bool]:
     return region or "Unknown region", is_pinned
 
 
-def check_text_truncated(article: ElementHandle) -> bool:
+def _check_text_truncated(article: ElementHandle) -> bool:
     return (
         article.query_selector("button:has-text('Show more')") is not None
         or article.query_selector("a:has-text('Show more')") is not None
     )
 
 
-def get_video_info(article: ElementHandle) -> Tuple[bool, Optional[str]]:
+def _get_video_info(article: ElementHandle) -> Tuple[bool, Optional[str]]:
     text = article.inner_text()
     has_video = ("Embedded video" in text) or ("Play Video" in text)
     duration = None
@@ -263,7 +263,7 @@ def get_video_info(article: ElementHandle) -> Tuple[bool, Optional[str]]:
     return has_video, duration
 
 
-def extract_counts_from_group(article: ElementHandle) -> Dict[str, Optional[int]]:
+def _extract_counts_from_group(article: ElementHandle) -> Dict[str, Optional[int]]:
     counts: Dict[str, Optional[int]] = {
         "replies": None,
         "reposts": None,
@@ -291,18 +291,18 @@ def extract_counts_from_group(article: ElementHandle) -> Dict[str, Optional[int]
             continue
         lower = name.lower()
         if "replies" in lower or "reply" in lower:
-            counts["replies"] = counts["replies"] or parse_compact_number(name)
+            counts["replies"] = counts["replies"] or _parse_compact_number(name)
         elif "reposts" in lower or "repost" in lower:
-            counts["reposts"] = counts["reposts"] or parse_compact_number(name)
+            counts["reposts"] = counts["reposts"] or _parse_compact_number(name)
         elif "likes" in lower or "like" in lower:
-            counts["likes"] = counts["likes"] or parse_compact_number(name)
+            counts["likes"] = counts["likes"] or _parse_compact_number(name)
         elif "views" in lower:
-            counts["views"] = counts["views"] or parse_compact_number(name)
+            counts["views"] = counts["views"] or _parse_compact_number(name)
 
     return counts
 
 
-def extract_images(article: ElementHandle) -> List[str]:
+def _extract_images(article: ElementHandle) -> List[str]:
     images: List[str] = []
     for img in article.query_selector_all("img"):
         src = img.get_attribute("src")
@@ -345,7 +345,7 @@ def extract_images(article: ElementHandle) -> List[str]:
     return out
 
 
-def extract_quote_tweet(article: ElementHandle) -> Optional[Dict[str, Any]]:
+def _extract_quote_tweet(article: ElementHandle) -> Optional[Dict[str, Any]]:
     text = article.inner_text()
     if "Quote" not in text:
         return None
@@ -367,11 +367,11 @@ def extract_quote_tweet(article: ElementHandle) -> Optional[Dict[str, Any]]:
     return None
 
 
-def extract_tweet(article: ElementHandle, target_username: str) -> Optional[Dict[str, Any]]:
-    if is_ad_tweet(article):
+def _extract_tweet(article: ElementHandle, target_username: str) -> Optional[Dict[str, Any]]:
+    if _is_ad_tweet(article):
         return None
 
-    is_repost, reposted_by = get_repost_info(article)
+    is_repost, reposted_by = _get_repost_info(article)
 
     status_links = article.query_selector_all("a[href*='/status/']")
     href: Optional[str] = None
@@ -411,14 +411,14 @@ def extract_tweet(article: ElementHandle, target_username: str) -> Optional[Dict
             if len(t) > len(text):
                 text = t
 
-    region, is_pinned = get_region_and_pinned(article)
-    counts = extract_counts_from_group(article)
-    images = extract_images(article)
-    has_video, video_duration = get_video_info(article)
-    quoted_tweet = extract_quote_tweet(article)
-    is_truncated = check_text_truncated(article)
-    mentions = extract_mentions(text)
-    urls = extract_urls(text)
+    region, is_pinned = _get_region_and_pinned(article)
+    counts = _extract_counts_from_group(article)
+    images = _extract_images(article)
+    has_video, video_duration = _get_video_info(article)
+    quoted_tweet = _extract_quote_tweet(article)
+    is_truncated = _check_text_truncated(article)
+    mentions = _extract_mentions(text)
+    urls = _extract_urls(text)
 
     return {
         "time": time_str or "",
@@ -446,7 +446,7 @@ def extract_tweet(article: ElementHandle, target_username: str) -> Optional[Dict
     }
 
 
-def scroll_to_load(page: Page, max_scrolls: int = 10) -> None:
+def _scroll_to_load(page: Page, max_scrolls: int = 10) -> None:
     prev_count = 0
     for _ in range(max_scrolls):
         page.mouse.wheel(0, 1200)
@@ -489,8 +489,8 @@ def list_all_tweets(username: str, headless: bool = False, save: bool = True) ->
     """Open X user profile and collect all non-ad tweets.
 
     Flow:
-    1. Build profile URL and connect over CDP (see loginX).
-    2. If login wall or not authenticated, call loginX(), then retry.
+    1. Build profile URL and connect over CDP (see _login_x).
+    2. If login wall or not authenticated, call _login_x(), then retry.
     3. Scroll to load, extract tweets, filter ads, return list of dicts (string values).
 
     Returns a list of `Post` objects. Each post is also auto-saved into the
@@ -529,7 +529,7 @@ def list_all_tweets(username: str, headless: bool = False, save: bool = True) ->
             logging.info("Login required; performing login flow")
             browser.close()
             # Perform login via existing CDP session
-            loginX(headless=headless)
+            _login_x(headless=headless)
             # Reconnect and navigate again
             browser = p.chromium.connect_over_cdp(cdp_url)
             context = browser.contexts[0]
@@ -559,7 +559,7 @@ def list_all_tweets(username: str, headless: bool = False, save: bool = True) ->
                 if items:
                     return items
             # If none, attempt limited scroll then re-collect
-            scroll_to_load(page, max_scrolls=8)
+            _scroll_to_load(page, max_scrolls=8)
             for sel in selectors:
                 items = page.query_selector_all(sel)
                 if items:
@@ -619,7 +619,7 @@ def list_all_tweets(username: str, headless: bool = False, save: bool = True) ->
             try:
                 logging.info("Still no articles; retrying after login refresh")
                 browser.close()
-                loginX(headless=headless)
+                _login_x(headless=headless)
                 browser = p.chromium.connect_over_cdp(cdp_url)
                 context = browser.contexts[0]
                 context.set_default_timeout(30000)
@@ -638,7 +638,7 @@ def list_all_tweets(username: str, headless: bool = False, save: bool = True) ->
         results: List[Post] = []
 
         for article in articles:
-            item = extract_tweet(article, username)
+            item = _extract_tweet(article, username)
             if not item:
                 continue
             key = item.get("tweetId") or item.get("link") or ""
