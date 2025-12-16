@@ -25,6 +25,22 @@ class IndexStock(BaseModel):
     updated_at = IntegerField()  # Unix timestamp
 
 
+def _normalize_optional_text(value: str | None) -> str | None:
+    if value is None:
+        return None
+    text = value.strip()
+    return text or None
+
+
+def _merge_index_names(existing: str | None, incoming: str) -> str:
+    existing_names = {name.strip() for name in (existing or "").split(",") if name.strip()}
+    incoming_names = {name.strip() for name in incoming.split(",") if name.strip()}
+
+    order = {"sp500": 0, "nasdaq100": 1}
+    merged = sorted(existing_names | incoming_names, key=lambda n: order.get(n, 99))
+    return ",".join(merged)
+
+
 def save_index_stock(
     ticker: str,
     company_name: str,
@@ -39,19 +55,23 @@ def save_index_stock(
     """
     now_ts = int(datetime.utcnow().timestamp())
 
-    updated = (
-        IndexStock.update(
-            company_name=company_name,
-            index_name=index_name,
-            sector=sector,
-            industry=industry,
-            updated_at=now_ts,
-        )
-        .where(IndexStock.ticker == ticker)
-        .execute()
-    )
+    ticker = ticker.strip()
+    company_name = company_name.strip()
+    index_name = index_name.strip()
+    sector = _normalize_optional_text(sector)
+    industry = _normalize_optional_text(industry)
 
-    if updated:
+    existing = IndexStock.get_or_none(IndexStock.ticker == ticker)
+    if existing is not None:
+        existing.company_name = company_name or existing.company_name
+        existing.index_name = _merge_index_names(existing.index_name, index_name)
+        incoming_is_sp500 = "sp500" in {name.strip() for name in index_name.split(",")}
+        if sector and (incoming_is_sp500 or not _normalize_optional_text(existing.sector)):
+            existing.sector = sector
+        if industry and (incoming_is_sp500 or not _normalize_optional_text(existing.industry)):
+            existing.industry = industry
+        existing.updated_at = now_ts
+        existing.save()
         return True
 
     try:
@@ -72,9 +92,8 @@ def get_index_stocks(index_name: str | None = None) -> List[IndexStock]:
     """Get all stocks, optionally filtered by index name."""
     query = IndexStock.select()
     if index_name:
-        query = query.where(IndexStock.index_name == index_name)
+        query = query.where(IndexStock.index_name.contains(index_name))
     return list(query.order_by(IndexStock.ticker))
 
 
 __all__ = ["IndexStock", "save_index_stock", "get_index_stocks"]
-

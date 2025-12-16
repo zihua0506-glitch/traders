@@ -31,6 +31,7 @@ def use_temp_db(path: str) -> None:
     dbmod.BaseModel._meta.database = newdb
     dbmod.IndexStock._meta.database = newdb
     dbmod.SentimentPost._meta.database = newdb
+    dbmod.StockPriceBar._meta.database = newdb
     dbmod.XUsername._meta.database = newdb
 
 

@@ -16,6 +16,7 @@ from .sentiment_post import (
     ensure_sentiment_indexes,
     ensure_sentiment_columns,
 )
+from .stock_price_bar import StockPriceBar
 from .x_username import XUsername, get_enabled_x_usernames
 
 __all__ = [
@@ -27,6 +28,7 @@ __all__ = [
     # Business models
     "IndexStock",
     "SentimentPost",
+    "StockPriceBar",
     "XUsername",
     # Helpers
     "save_index_stock",
@@ -39,4 +41,3 @@ __all__ = [
     "ensure_sentiment_indexes",
     "ensure_sentiment_columns",
 ]
-

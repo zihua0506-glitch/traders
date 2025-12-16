@@ -11,6 +11,7 @@ from typing import List
 
 from models.base import db, BaseModel
 from models.index_stock import IndexStock, save_index_stock, get_index_stocks
+from models.stock_price_bar import StockPriceBar
 from models.x_username import XUsername, get_enabled_x_usernames
 from models.sentiment_post import (
     SentimentPost,
@@ -26,7 +27,7 @@ from models.post import Post
 def init_db() -> None:
     """Initialize database and create tables if missing."""
     db.connect(reuse_if_open=True)
-    db.create_tables([IndexStock, SentimentPost, XUsername])
+    db.create_tables([IndexStock, SentimentPost, StockPriceBar, XUsername])
     try:
         ensure_sentiment_columns()
     except Exception:
@@ -51,6 +52,7 @@ __all__ = [
     "BaseModel",
     "IndexStock",
     "SentimentPost",
+    "StockPriceBar",
     "XUsername",
     "init_db",
     "save_index_stock",

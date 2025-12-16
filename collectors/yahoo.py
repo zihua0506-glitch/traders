@@ -9,12 +9,12 @@ import hashlib
 import logging
 import time
 import urllib3
-from typing import List, Tuple, Optional
-from datetime import datetime
+from typing import List, Tuple, Optional, Dict, Any
+from datetime import datetime, timezone, timedelta
 
 from bs4 import BeautifulSoup
 
-from models import Post
+from models import Post, StockPriceBar
 from .base import BaseCollector
 
 
@@ -273,6 +273,238 @@ def fetch_posts_as_models(
     """
     collector = _get_collector()
     return collector.fetch_posts(hours=hours, symbols=symbols)
+
+
+def sync_stock_price_bars(
+    symbol: str,
+    *,
+    sync_daily: bool = True,
+    sync_intraday: bool = True,
+    daily_overlap_days: int = 2,
+    intraday_overlap_minutes: int = 5,
+) -> Dict[str, Any]:
+    """Sync adjusted daily and intraday price bars for a single stock symbol.
+
+    Stores data into the `stock_price_bars` table via the `StockPriceBar` model.
+    """
+    symbol_n = (symbol or "").strip().upper()
+    if not symbol_n:
+        raise ValueError("symbol is required")
+
+    result: Dict[str, Any] = {"symbol": symbol_n}
+
+    if sync_daily:
+        result["daily"] = _sync_yahoo_price_bars(
+            symbol_n,
+            interval="1d",
+            overlap=timedelta(days=daily_overlap_days),
+            default_period="max",
+            prepost=False,
+        )
+
+    if sync_intraday:
+        result["intraday"] = _sync_yahoo_intraday_with_fallback(
+            symbol_n,
+            overlap=timedelta(minutes=intraday_overlap_minutes),
+        )
+
+    return result
+
+
+def _sync_yahoo_intraday_with_fallback(symbol: str, *, overlap: timedelta) -> Dict[str, Any]:
+    intervals = ["1m", "2m", "5m", "15m", "30m", "60m"]
+    last_error: str | None = None
+
+    for interval in intervals:
+        try:
+            out = _sync_yahoo_price_bars(
+                symbol,
+                interval=interval,
+                overlap=overlap,
+                default_period="7d",
+                prepost=True,
+            )
+            if out.get("raw_rows", 0) > 0:
+                return out
+            last_error = f"empty data for interval={interval}"
+        except Exception as exc:
+            last_error = str(exc)
+            logger.warning("[yahoo] intraday interval fallback (%s): %s", interval, exc)
+            continue
+
+    return {
+        "interval": None,
+        "raw_rows": 0,
+        "fetched_rows": 0,
+        "inserted": 0,
+        "updated": 0,
+        "unchanged": 0,
+        "errors": 1,
+        "start_ts": None,
+        "end_ts": None,
+        "error": last_error or "all intraday intervals failed",
+    }
+
+
+def _sync_yahoo_price_bars(
+    symbol: str,
+    *,
+    interval: str,
+    overlap: timedelta,
+    default_period: str,
+    prepost: bool,
+) -> Dict[str, Any]:
+    try:
+        import pandas as pd  # type: ignore
+    except Exception as exc:
+        raise RuntimeError("pandas is required for price bar sync") from exc
+
+    try:
+        import yfinance as yf  # type: ignore
+    except Exception as exc:
+        raise RuntimeError("yfinance is required for price bar sync") from exc
+
+    symbol_n = (symbol or "").strip().upper()
+    interval_n = (interval or "").strip()
+    if not symbol_n or not interval_n:
+        raise ValueError("symbol and interval are required")
+
+    last_ts = StockPriceBar.get_latest_ts(symbol_n, interval_n)
+    overlap_s = int(overlap.total_seconds())
+    start_ts = (last_ts - overlap_s) if last_ts is not None else None
+
+    ticker = yf.Ticker(symbol_n)
+
+    df = _fetch_history_df(
+        ticker,
+        interval=interval_n,
+        start_ts=start_ts,
+        default_period=default_period,
+        prepost=prepost,
+    )
+
+    if df is None or df.empty:
+        return {
+            "interval": interval_n,
+            "raw_rows": 0,
+            "fetched_rows": 0,
+            "inserted": 0,
+            "updated": 0,
+            "unchanged": 0,
+            "errors": 0,
+            "start_ts": None,
+            "end_ts": None,
+        }
+
+    raw_rows = int(len(df))
+    df_reset = df.reset_index()
+    time_col = df_reset.columns[0]
+    ts_utc = pd.to_datetime(df_reset[time_col], utc=True)
+    df_reset["ts"] = (ts_utc.view("int64") // 1_000_000_000).astype("int64")
+
+    col_map = {}
+    for c in df_reset.columns:
+        lc = str(c).lower()
+        if lc in {"open", "high", "low", "close", "volume"}:
+            col_map[c] = lc
+    df_reset = df_reset.rename(columns=col_map)
+
+    if interval_n == "1d":
+        df_reset["session"] = "regular"
+    else:
+        exchange_tz = getattr(df.index, "tz", None)
+        df_reset["session"] = _classify_trading_session(ts_utc, exchange_tz)
+
+    if start_ts is not None:
+        df_reset = df_reset[df_reset["ts"] >= int(start_ts)]
+
+    required_cols = ["ts", "open", "high", "low", "close", "volume", "session"]
+    for col in required_cols:
+        if col not in df_reset.columns:
+            raise RuntimeError(f"missing column from yfinance data: {col}")
+
+    df_reset = df_reset.dropna(subset=["ts", "open", "high", "low", "close"])
+    if df_reset.empty:
+        return {
+            "interval": interval_n,
+            "raw_rows": raw_rows,
+            "fetched_rows": 0,
+            "inserted": 0,
+            "updated": 0,
+            "unchanged": 0,
+            "errors": 0,
+            "start_ts": None,
+            "end_ts": None,
+        }
+
+    rows: List[Dict[str, Any]] = []
+    for record in df_reset.to_dict(orient="records"):
+        rows.append({
+            "symbol": symbol_n,
+            "interval": interval_n,
+            "ts": int(record["ts"]),
+            "open": record.get("open"),
+            "high": record.get("high"),
+            "low": record.get("low"),
+            "close": record.get("close"),
+            "volume": record.get("volume", 0),
+            "session": record.get("session", "unknown"),
+        })
+
+    stats = StockPriceBar.save_bars(rows)
+    ts_min = int(df_reset["ts"].min())
+    ts_max = int(df_reset["ts"].max())
+
+    return {
+        "interval": interval_n,
+        "raw_rows": raw_rows,
+        "fetched_rows": int(len(rows)),
+        "inserted": int(stats.get("inserted", 0)),
+        "updated": int(stats.get("updated", 0)),
+        "unchanged": int(stats.get("unchanged", 0)),
+        "errors": int(stats.get("errors", 0)),
+        "start_ts": ts_min,
+        "end_ts": ts_max,
+    }
+
+
+def _classify_trading_session(ts_utc, exchange_tz):
+    import pandas as pd  # type: ignore
+
+    if exchange_tz is None:
+        return pd.Series(["unknown"] * len(ts_utc), index=ts_utc.index)
+
+    local = ts_utc.dt.tz_convert(exchange_tz)
+    minutes = local.dt.hour * 60 + local.dt.minute
+    is_regular = (minutes >= 570) & (minutes < 960)
+    return is_regular.map({True: "regular", False: "extended"})
+
+
+def _fetch_history_df(
+    ticker: Any,
+    *,
+    interval: str,
+    start_ts: int | None,
+    default_period: str,
+    prepost: bool,
+):
+    kwargs: Dict[str, Any] = {
+        "interval": interval,
+        "auto_adjust": True,
+        "prepost": prepost,
+        "actions": False,
+    }
+
+    if start_ts is not None and start_ts > 0:
+        start_dt = datetime.fromtimestamp(start_ts, tz=timezone.utc)
+        try:
+            df = ticker.history(start=start_dt, **kwargs)
+            if df is not None and not df.empty:
+                return df
+        except Exception as exc:
+            logger.warning("[yahoo] history(start=...) failed for %s %s: %s", ticker.ticker, interval, exc)
+
+    return ticker.history(period=default_period, **kwargs)
 
 
 if __name__ == "__main__":
