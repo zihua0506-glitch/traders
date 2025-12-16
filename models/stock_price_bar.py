@@ -47,6 +47,7 @@ class StockPriceBar(BaseModel):
     symbol = CharField(max_length=32, index=True)
     interval = CharField(max_length=8, index=True)
     ts = IntegerField(index=True)  # UTC unix seconds
+    trade_day = CharField(max_length=8, index=True)  # YYYYMMDD in exchange-local date when available
 
     open = FloatField()
     high = FloatField()
@@ -86,6 +87,7 @@ class StockPriceBar(BaseModel):
         symbol: str,
         interval: str,
         ts: int,
+        trade_day: str,
         open_price: Any,
         high: Any,
         low: Any,
@@ -98,7 +100,12 @@ class StockPriceBar(BaseModel):
         if not symbol_n or not interval_n:
             raise ValueError("symbol and interval are required")
 
+        trade_day_n = (trade_day or "").strip()
+        if len(trade_day_n) != 8 or not trade_day_n.isdigit():
+            raise ValueError("trade_day must be YYYYMMDD")
+
         defaults: Dict[str, Any] = {
+            "trade_day": trade_day_n,
             "open": _normalize_float(open_price),
             "high": _normalize_float(high),
             "low": _normalize_float(low),
@@ -140,6 +147,7 @@ class StockPriceBar(BaseModel):
                         symbol=str(row.get("symbol", "")),
                         interval=str(row.get("interval", "")),
                         ts=int(row.get("ts", 0)),
+                        trade_day=str(row.get("trade_day", "")),
                         open_price=row.get("open"),
                         high=row.get("high"),
                         low=row.get("low"),
@@ -158,4 +166,26 @@ class StockPriceBar(BaseModel):
         return stats
 
 
-__all__ = ["StockPriceBar"]
+def _get_table_columns(database, table_name: str) -> set:
+    rows = database.execute_sql(f"PRAGMA table_info({table_name})").fetchall()
+    return {row[1] for row in rows}
+
+
+def ensure_stock_price_bar_columns() -> None:
+    database = StockPriceBar._meta.database
+    table = StockPriceBar._meta.table_name
+    cols = _get_table_columns(database, table)
+
+    if "trade_day" not in cols:
+        database.execute_sql(f"ALTER TABLE {table} ADD COLUMN trade_day TEXT DEFAULT ''")
+        cols.add("trade_day")
+
+    if "trade_day" in cols:
+        database.execute_sql(
+            f"UPDATE {table} "
+            "SET trade_day = strftime('%Y%m%d', ts, 'unixepoch') "
+            "WHERE trade_day IS NULL OR trade_day = ''"
+        )
+
+
+__all__ = ["StockPriceBar", "ensure_stock_price_bar_columns"]

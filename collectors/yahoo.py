@@ -409,16 +409,18 @@ def _sync_yahoo_price_bars(
             col_map[c] = lc
     df_reset = df_reset.rename(columns=col_map)
 
+    exchange_tz = getattr(df.index, "tz", None)
+    df_reset["trade_day"] = _compute_trade_day(ts_utc, exchange_tz)
+
     if interval_n == "1d":
         df_reset["session"] = "regular"
     else:
-        exchange_tz = getattr(df.index, "tz", None)
         df_reset["session"] = _classify_trading_session(ts_utc, exchange_tz)
 
     if start_ts is not None:
         df_reset = df_reset[df_reset["ts"] >= int(start_ts)]
 
-    required_cols = ["ts", "open", "high", "low", "close", "volume", "session"]
+    required_cols = ["ts", "trade_day", "open", "high", "low", "close", "volume", "session"]
     for col in required_cols:
         if col not in df_reset.columns:
             raise RuntimeError(f"missing column from yfinance data: {col}")
@@ -443,6 +445,7 @@ def _sync_yahoo_price_bars(
             "symbol": symbol_n,
             "interval": interval_n,
             "ts": int(record["ts"]),
+            "trade_day": record.get("trade_day"),
             "open": record.get("open"),
             "high": record.get("high"),
             "low": record.get("low"),
@@ -478,6 +481,14 @@ def _classify_trading_session(ts_utc, exchange_tz):
     minutes = local.dt.hour * 60 + local.dt.minute
     is_regular = (minutes >= 570) & (minutes < 960)
     return is_regular.map({True: "regular", False: "extended"})
+
+
+def _compute_trade_day(ts_utc, exchange_tz):
+    if exchange_tz is None:
+        local = ts_utc
+    else:
+        local = ts_utc.dt.tz_convert(exchange_tz)
+    return local.dt.strftime("%Y%m%d")
 
 
 def _fetch_history_df(

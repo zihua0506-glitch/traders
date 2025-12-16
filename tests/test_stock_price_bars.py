@@ -52,6 +52,7 @@ def test_stock_price_bar_upsert_and_latest_ts() -> bool:
         symbol=symbol,
         interval=interval,
         ts=1000,
+        trade_day="19700101",
         open_price=10,
         high=11,
         low=9,
@@ -65,6 +66,7 @@ def test_stock_price_bar_upsert_and_latest_ts() -> bool:
         symbol=symbol,
         interval=interval,
         ts=1000,
+        trade_day="19700101",
         open_price=10,
         high=11,
         low=9,
@@ -78,6 +80,7 @@ def test_stock_price_bar_upsert_and_latest_ts() -> bool:
         (StockPriceBar.symbol == symbol) & (StockPriceBar.interval == interval) & (StockPriceBar.ts == 1000)
     )
     assert bar is not None
+    assert bar.trade_day == "19700101"
     assert bar.close == 10.6
     assert bar.volume == 101
     assert bar.session == "extended"
@@ -86,6 +89,7 @@ def test_stock_price_bar_upsert_and_latest_ts() -> bool:
         symbol=symbol,
         interval=interval,
         ts=1000,
+        trade_day="19700101",
         open_price=10,
         high=11,
         low=9,
@@ -99,6 +103,7 @@ def test_stock_price_bar_upsert_and_latest_ts() -> bool:
         symbol=symbol,
         interval=interval,
         ts=1010,
+        trade_day="19700101",
         open_price=10.6,
         high=11,
         low=10.5,
@@ -141,4 +146,3 @@ def run():
 
 if __name__ == "__main__":
     run()
-
