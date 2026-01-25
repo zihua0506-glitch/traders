@@ -400,7 +400,7 @@ def _sync_yahoo_price_bars(
     df_reset = df.reset_index()
     time_col = df_reset.columns[0]
     ts_utc = pd.to_datetime(df_reset[time_col], utc=True)
-    df_reset["ts"] = (ts_utc.view("int64") // 1_000_000_000).astype("int64")
+    df_reset["ts"] = (ts_utc.astype("int64") // 1_000_000_000).astype("int64")
 
     col_map = {}
     for c in df_reset.columns:
