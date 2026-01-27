@@ -114,3 +114,5 @@ Posts are stored in `sentiment.db` (SQLite) with the following fields:
 - `db.py` - SQLite/Peewee database operations
 - `config.py` - Centralized configuration and performance monitoring
 - `tests/test_collector.py` - Collector test suite
+
+回测部分 调用backtrader
