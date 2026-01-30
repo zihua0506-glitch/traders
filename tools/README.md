@@ -11,3 +11,7 @@ function_name(symbol,optional_symbol)->str:
 数据级别 输入输出
 
 策略部分与指标预测（模型）分开 即信号与执行端分开
+执行端直接用大模型本身的决策逻辑
+Numbers--Preproccessing-LLM_Analysis-Output(Context)
+
+第一版先预测未来2-4小时的，后续如果有改进可以改变时间窗口 假设最细粒度的输出在"sentiment.db"中是15min(interval列)
