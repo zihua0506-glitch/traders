@@ -288,7 +288,7 @@ def get_all_alphas(df: pd.DataFrame) -> pd.DataFrame:
 # 主函数
 # ==========================================
 
-def alpha_factors(symbol: str, optional_symbol: str = None) -> str:
+def alpha_factors(symbol: str, optional_symbol: str | None = None) -> str:
     """
     主函数: 生成量化 Alpha 因子的综合报告。
 

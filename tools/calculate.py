@@ -220,13 +220,13 @@ def trend_direction(series: pd.Series, window: int = 5) -> str:
         return "数据不足"
 
     x = np.arange(len(recent))
-    y = recent.values
+    y = np.asarray(recent.values, dtype=np.float64)
 
     y_mean = np.mean(np.abs(y))
     if y_mean == 0:
         return "横盘"
 
-    slope = np.polyfit(x, y, 1)[0]
+    slope: float = float(np.polyfit(x, y, 1)[0])
     relative_slope = slope / y_mean * 100
 
     if abs(relative_slope) < 0.1:

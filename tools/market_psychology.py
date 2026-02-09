@@ -77,7 +77,7 @@ def calculate_rsi(data: pd.DataFrame, period: int = 14) -> pd.Series:
     return rsi
 
 
-def market_psychology(symbol: str, optional_symbol: str = None) -> str:
+def market_psychology(symbol: str, optional_symbol: str | None = None) -> str:
     """
     主函数: 捕捉市场非理性情绪，寻找反转点。
 

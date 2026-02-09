@@ -27,7 +27,7 @@ def calculate_ema(data: pd.DataFrame, span: int) -> pd.Series:
     return data['close'].ewm(span=span, adjust=False).mean()
 
 
-def macro_lines(symbol: str, optional_symbol: str = None) -> str:
+def macro_lines(symbol: str, optional_symbol: str | None = None) -> str:
     """
     主函数: 计算宏观趋势指标并返回相对值分析。
 

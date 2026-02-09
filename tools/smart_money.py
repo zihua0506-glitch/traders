@@ -104,7 +104,7 @@ def calculate_macd(data: pd.DataFrame, fast: int = 12, slow: int = 26,
     })
 
 
-def smart_money(symbol: str, optional_symbol: str = None) -> str:
+def smart_money(symbol: str, optional_symbol: str | None = None) -> str:
     """
     主函数: 追踪机构资金流向，识别入场机会。
 

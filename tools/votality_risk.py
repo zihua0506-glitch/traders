@@ -143,7 +143,7 @@ def calculate_atr(data: pd.DataFrame, period: int = 14) -> pd.Series:
     return tr.rolling(period).mean()
 
 
-def volatility_risk(symbol: str, optional_symbol: str = None) -> str:
+def volatility_risk(symbol: str, optional_symbol: str | None = None) -> str:
     """
     主函数: 风控与波动率分析。
 

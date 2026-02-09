@@ -115,4 +115,4 @@ Posts are stored in `sentiment.db` (SQLite) with the following fields:
 - `config.py` - Centralized configuration and performance monitoring
 - `tests/test_collector.py` - Collector test suite
 
-回测部分 调用backtrader
+v1数据框架：先加载target.txt中的所有关注的index的数据（包括1年内的天级数据+以当前时间戳往前推24小时的15min数据，如果没有提取时间戳等工具自行添加） 储存在sentiment.db中 并运行@main.py 加载sentiment数据（以当天时间戳向前推24小时社交媒体上post的） 也储存在sentiment.db中

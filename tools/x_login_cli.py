@@ -2,12 +2,13 @@
 import os
 import sys
 from dotenv import load_dotenv
+from playwright.sync_api import sync_playwright
 
 # Ensure repo root is on sys.path for package imports when running as a script
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from collectors.base import BaseCollector
-from collectors.x import loginX
+from collectors.x import _login_x
 
 
 PORT = 9222
@@ -29,7 +30,8 @@ def main():
     os.environ["X_CDP_URL"] = f"http://localhost:{PORT}"
 
     try:
-        loginX(headless=False)
+        with sync_playwright() as p:
+            _login_x(p, headless=False)
         print("Login completed successfully")
     except Exception as e:
         print(f"Login failed: {e}")

@@ -156,7 +156,7 @@ def calculate_supertrend(data: pd.DataFrame, period: int = 10,
     })
 
 
-def trend_structure(symbol: str, optional_symbol: str = None) -> str:
+def trend_structure(symbol: str, optional_symbol: str | None = None) -> str:
     """
     主函数: 确定当前的市场背景。
 
