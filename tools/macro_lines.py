@@ -8,8 +8,12 @@ macro_lines.py - 计算宏观指标
          这些线的排列关系决定了整体交易方向。
 """
 
+import os
+import sys
 import pandas as pd
-from .calculate import (
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+from tools.calculate import (
     load_bars, resample_daily,
     above_below, trend_direction, cross_detect,
     compare_symbols, format_report,
@@ -157,3 +161,13 @@ def macro_lines(symbol: str, optional_symbol: str | None = None) -> str:
                     report += f"\n{symbol} EMA21乖离率: {dev_a:+.2f}% vs {optional_symbol}: {dev_b:+.2f}%"
 
     return report
+
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Macro Lines - 宏观均线分析")
+    parser.add_argument("symbol", help="股票/虚拟货币代码 (如 AAPL, BTC)")
+    parser.add_argument("--vs", dest="optional_symbol", default=None,
+                        help="对比标的 (如 SPY)")
+    args = parser.parse_args()
+    print(macro_lines(args.symbol, args.optional_symbol))

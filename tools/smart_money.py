@@ -6,8 +6,12 @@ smart_money.py - 追踪机构资金流向，识别入场机会/价格波动
          通过跟踪这些痕迹来判断机构是在吸筹还是在出货。
 """
 
+import os
+import sys
 import pandas as pd
-from .calculate import (
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+from tools.calculate import (
     load_bars, get_recent_24h,
     above_below, trend_direction, cross_detect,
     divergence_detect, classify_level, compare_symbols,
@@ -182,3 +186,13 @@ def smart_money(symbol: str, optional_symbol: str | None = None) -> str:
                 report += f"\n{compare_symbols(cmf_current, cmf_opt.iloc[-1], symbol, optional_symbol, 'CMF')}"
 
     return report
+
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Smart Money - 机构资金流向分析")
+    parser.add_argument("symbol", help="股票/虚拟货币代码 (如 AAPL, BTC)")
+    parser.add_argument("--vs", dest="optional_symbol", default=None,
+                        help="对比标的 (如 SPY)")
+    args = parser.parse_args()
+    print(smart_money(args.symbol, args.optional_symbol))

@@ -11,11 +11,14 @@ Alpha Factors Library (alpha.py)
 4. 量价互动类 (Correlation, WQ Alphas)
 """
 
+import os
+import sys
 import numpy as np
 import pandas as pd
 from scipy.stats import entropy
 
-from .calculate import (
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+from tools.calculate import (
     load_bars, get_recent_24h,
     classify_level, trend_direction, sigma_position,
     divergence_detect, compare_symbols, format_report
@@ -489,3 +492,13 @@ def alpha_factors(symbol: str, optional_symbol: str | None = None) -> str:
                     report += f"\n{compare_symbols(hurst_val, hurst_opt.iloc[-1], symbol, optional_symbol, 'Hurst')}"
 
     return report
+
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Alpha Factors - 量化Alpha因子分析")
+    parser.add_argument("symbol", help="股票/虚拟货币代码 (如 AAPL, BTC)")
+    parser.add_argument("--vs", dest="optional_symbol", default=None,
+                        help="对比标的 (如 SPY)")
+    args = parser.parse_args()
+    print(alpha_factors(args.symbol, args.optional_symbol))

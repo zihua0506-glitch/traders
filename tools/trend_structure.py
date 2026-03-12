@@ -6,9 +6,13 @@ trend_structure.py - 确定当前的市场背景 (Context)
          "顺势而为" —— 只在上升趋势中做多，只在下降趋势中做空。
 """
 
+import os
+import sys
 import pandas as pd
 import numpy as np
-from .calculate import (
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+from tools.calculate import (
     load_bars, get_recent_24h, resample_daily,
     above_below, trend_direction, cross_detect,
     format_report, support_resistance_relation,
@@ -249,3 +253,13 @@ def trend_structure(symbol: str, optional_symbol: str | None = None) -> str:
             report += f"\n{optional_symbol} SuperTrend: {'多头' if st_opt_trend == 1 else '空头'}"
 
     return report
+
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Trend Structure - 市场趋势结构分析")
+    parser.add_argument("symbol", help="股票/虚拟货币代码 (如 AAPL, BTC)")
+    parser.add_argument("--vs", dest="optional_symbol", default=None,
+                        help="对比标的 (如 SPY)")
+    args = parser.parse_args()
+    print(trend_structure(args.symbol, args.optional_symbol))
