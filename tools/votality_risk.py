@@ -8,9 +8,13 @@ votality_risk.py - 风控与波动率分析
          CHOP 指数区分"趋势市"和"震荡市"，帮助选择策略。
 """
 
+import os
+import sys
 import pandas as pd
 import numpy as np
-from .calculate import (
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+from tools.calculate import (
     load_bars, get_recent_24h,
     above_below, trend_direction, classify_level,
     range_position, compare_symbols, format_report,
@@ -255,3 +259,13 @@ def volatility_risk(symbol: str, optional_symbol: str | None = None) -> str:
                 report += f"\n{compare_symbols(atr_pct_a, atr_pct_b, symbol, optional_symbol, 'ATR%')}"
 
     return report
+
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Volatility Risk - 波动率与风控分析")
+    parser.add_argument("symbol", help="股票/虚拟货币代码 (如 AAPL, BTC)")
+    parser.add_argument("--vs", dest="optional_symbol", default=None,
+                        help="对比标的 (如 SPY)")
+    args = parser.parse_args()
+    print(volatility_risk(args.symbol, args.optional_symbol))

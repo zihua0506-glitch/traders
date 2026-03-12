@@ -148,36 +148,6 @@ function_name(symbol: str, optional_symbol: str = None) -> str
 
 ---
 
-## 数据采集工具
-
-### x_login_cli.py — X(Twitter) 登录
-```bash
-python x_login_cli.py
-```
-启动 Chrome CDP → 打开 X 登录页面 → 用户手动完成验证 → session 持久化到 profile 目录。
-一次性前置操作，后续 scrape 复用已保存的 session。
-
-环境变量:
-- `play_wright_profile_path`: Playwright 浏览器 profile 目录路径
-
-### x_scrape_cli.py — X(Twitter) 帖子抓取
-```bash
-# 单用户
-python x_scrape_cli.py --username elonmusk
-
-# 批量 (从 DB 读取 enabled 用户列表)
-python x_scrape_cli.py
-
-# 无头模式
-python x_scrape_cli.py --headless
-```
-
-流程: 启动 Chrome CDP → 确定目标用户 → 逐用户抓取 (间隔 1-5 秒反爬) → 输出 JSON → 清理进程。
-
-每条帖子包含: content, sentiment, likes, comments, shares, views, images, video_url, is_retweet 等 25 个字段。
-
----
-
 ## 调用示例
 
 详见 [prompt.md](prompt.md) — 完整的 LLM 调用示范 prompt。

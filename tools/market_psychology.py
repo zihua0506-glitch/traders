@@ -6,9 +6,13 @@ market_psychology.py - 捕捉人类交易者的非理性情绪（贪婪与恐慌
          这些指标专门检测"情绪过热"状态。
 """
 
+import os
+import sys
 import pandas as pd
 import numpy as np
-from .calculate import (
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+from tools.calculate import (
     load_bars, get_recent_24h,
     above_below, trend_direction, classify_level,
     divergence_detect, compare_symbols, format_report,
@@ -193,3 +197,13 @@ def market_psychology(symbol: str, optional_symbol: str | None = None) -> str:
                 report += f"\n{compare_symbols(cci_current, cci_opt.iloc[-1], symbol, optional_symbol, 'CCI')}"
 
     return report
+
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Market Psychology - 市场情绪分析")
+    parser.add_argument("symbol", help="股票/虚拟货币代码 (如 AAPL, BTC)")
+    parser.add_argument("--vs", dest="optional_symbol", default=None,
+                        help="对比标的 (如 SPY)")
+    args = parser.parse_args()
+    print(market_psychology(args.symbol, args.optional_symbol))
