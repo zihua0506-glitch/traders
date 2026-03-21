@@ -5,43 +5,53 @@ description: 社交媒体数据抓取工具。当用户想抓取、查看、获�
 
 # 社交媒体数据抓取工具
 
-抓取 X (Twitter) 平台上指定用户的最新推文。
+抓取 X (Twitter) 和 Reddit 的最新帖子。
 
-## 功能
-
-### 批量抓取用户推文
-
-从 `x_user_id.json` 读取用户列表，抓取每人最近 24 小时内最多 20 条推文。
+## 使用方法
 
 ```bash
-python tools/x_fetch_cli.py
+# 默认抓取最近 24 小时（1440 分钟）
+python cli/social_media_cli.py
+
+# 抓取最近 60 分钟
+python cli/social_media_cli.py --minutes 60
 ```
 
-无需传参，用户列表由项目根目录的 `x_user_id.json` 配置：
+## 数据源配置
+
+### X (Twitter)
+
+用户列表由项目根目录的 `x_user_id.json` 配置：
 
 ```json
 [
-  {"user_id": "44196397", "label": "elonmusk"},
-  {"user_id": "123456789", "label": "some_other_user"}
+  {"user_id": "44196397", "label": "elonmusk"}
+]
+```
+
+### Reddit
+
+Subreddit 列表由项目根目录的 `subreddits.json` 配置：
+
+```json
+[
+  {"subreddit": "wallstreetbets", "label": "WSB"},
+  {"subreddit": "stocks", "label": "Stocks"}
 ]
 ```
 
 ## 输出格式
 
-每条推文一行，包含用户名、时间、内容和互动指标：
+### X 推文
 
 ```
-[@elonmusk Wed Mar 12 08:30:00 +0000 2026] 推文正文内容 | views=1234 likes=567 rt=89
+[@elonmusk Wed Mar 12 08:30:00 +0000 2026] 推文内容 | views=1234 likes=567 rt=89
 ```
 
-特殊推文追加标记：
-- 转推：`[RETWEET of @原作者]: 原文内容`
-- 引用：`[QUOTE of @原作者]: 原文内容`
+### Reddit 帖子
 
-推文结果输出到 stdout，进度日志输出到 stderr。
+```
+[r/wallstreetbets 2026-03-21 08:30:00 UTC u/someone] 标题 | score=123 comments=45
+```
 
-## 使用场景
-
-- 抓取关注 KOL 的最新动态，用于舆情判断
-- 配合量化分析工具，先获取社交媒体情绪再做技术面验证
-- 管道输出：`python tools/x_fetch_cli.py > tweets.txt`
+结果输出到 stdout，进度日志输出到 stderr。
