@@ -10,23 +10,32 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import random
+import sys
 import time
 from typing import List, Tuple, Optional
 
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
 from models import Post
-from .base import BaseCollector
+from collectors.base import BaseCollector
 
 
 # Logger
 logger = logging.getLogger(__name__)
 
-# Target subreddit communities to collect from.
-SUBREDDITS = [
-    "wallstreetbets",
-    "stocks",
-    "investing",
-]
+# Load subreddit list from subreddits.json
+SUBREDDITS_FILE = os.path.join(PROJECT_ROOT, "subreddits.json")
+
+def _load_subreddits() -> List[str]:
+    with open(SUBREDDITS_FILE, "r", encoding="utf-8") as f:
+        entries = json.load(f)
+    return [entry["subreddit"] for entry in entries]
+
+SUBREDDITS = _load_subreddits()
 
 # Configuration
 MAX_POSTS_PER_REQUEST = 100
@@ -44,8 +53,10 @@ class RedditCollector(BaseCollector):
 
     def __init__(self, timeout: int = 15, delay: float = 1.0):
         super().__init__(timeout=timeout, delay=delay)
-        # Reddit prefers JSON accept header
-        self.session.headers.update({"Accept": "application/json"})
+        self.session.headers.update({
+            "Accept": "application/json",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15",
+        })
 
     def fetch_subreddit_posts(
         self,
