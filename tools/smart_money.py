@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 smart_money.py - 追踪机构资金流向，识别入场机会/价格波动
 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 votality_risk.py - 风控与波动率分析
 

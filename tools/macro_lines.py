@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 macro_lines.py - 计算宏观指标
 

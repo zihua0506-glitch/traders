@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 trend_structure.py - 确定当前的市场背景 (Context)
 

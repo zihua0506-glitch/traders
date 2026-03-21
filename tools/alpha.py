@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Alpha Factors Library (alpha.py)
 --------------------------------

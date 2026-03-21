@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 market_psychology.py - 捕捉人类交易者的非理性情绪（贪婪与恐慌），寻找反转点
 
