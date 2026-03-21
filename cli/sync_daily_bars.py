@@ -21,10 +21,15 @@ def _parse_args() -> argparse.Namespace:
         description="Sync adjusted stock price bars from Yahoo for tickers in IndexStock."
     )
     parser.add_argument(
+        "symbols",
+        nargs="*",
+        help="Ticker symbols to sync (e.g. AAPL TSLA). If omitted, sync all IndexStock tickers.",
+    )
+    parser.add_argument(
         "--index",
         choices=["all", "sp500", "nasdaq100"],
         default="all",
-        help="Which index membership to sync (default: all).",
+        help="Which index membership to sync when no symbols given (default: all).",
     )
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument(
@@ -57,11 +62,14 @@ def main() -> int:
 
     args = _parse_args()
 
-    index_filter = None if args.index == "all" else args.index
-    tickers = [row.ticker for row in get_index_stocks(index_filter)]
-    if not tickers:
-        print("No IndexStock tickers found in DB. Run `python3 cli/update_index_stocks.py` first.")
-        return 1
+    if args.symbols:
+        tickers = [s.upper() for s in args.symbols]
+    else:
+        index_filter = None if args.index == "all" else args.index
+        tickers = [row.ticker for row in get_index_stocks(index_filter)]
+        if not tickers:
+            print("No IndexStock tickers found in DB. Run `python3 cli/update_index_stocks.py` first.")
+            return 1
 
     if args.limit and args.limit > 0:
         tickers = tickers[: args.limit]
@@ -72,7 +80,8 @@ def main() -> int:
     print("=" * 60)
     print("Stock Price Bars Sync (Yahoo)")
     print("=" * 60)
-    print(f"Tickers: {len(tickers)} (index={args.index})")
+    source = ", ".join(tickers) if args.symbols else f"index={args.index}"
+    print(f"Tickers: {len(tickers)} ({source})")
     print(f"Sync: daily={sync_daily} intraday={sync_intraday}")
     print("-" * 60)
 
