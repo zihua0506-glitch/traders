@@ -28,9 +28,7 @@ from tools.calculate import (
 )
 
 
-# ==========================================
-# 内部指标计算 (轻量复用，避免重复加载数据)
-# ==========================================
+# --- 内部指标计算 (轻量复用，避免重复加载数据) ---
 
 def _vwap(df):
     tp = (df['high'] + df['low'] + df['close']) / 3
@@ -152,20 +150,23 @@ def _chop(df, period=14):
     return 100 * np.log10(tr.rolling(period).sum() / hl) / np.log10(period)
 
 
-# ==========================================
-# 核心: 信号评分
-# ==========================================
+# --- 核心: 信号评分 ---
 
 def _score_signals(df_24h, df_daily):
     """
-    计算各维度信号分数，返回 (raw_score, signals_detail)。
-    raw_score: float, 未经市场状态修正
-    signals_detail: dict, 各信号的分数和描述
+    计算各维度信号分数，返回加权总分与各信号明细。
+
+    LLM 逻辑:
+    - 趋势结构 (35分): SuperTrend/SAR/Ichimoku 共识越强，分值越高。
+    - 资金动量 (30分): MACD/CMF/VWAP 反映机构资金方向。
+    - 情绪极值 (20分): RSI背离优先级最高 (±12)，极值/WR为辅。
+    - 宏观背景 (15分): 日线 MA200/MA50 决定大方向天花板。
+    - CHOP 修正: 趋势市 ×1.2 (信号更可靠), 震荡市 ×0.7 (信号打折)。
     """
     close = df_24h['close'].iloc[-1]
     signals = {}
 
-    # ── 趋势结构 (35分) ──────────────────────────────────
+    # --- 趋势结构 (35分) ---
     # SuperTrend (20分)
     st, st_trend, st_upper, st_lower = _supertrend(df_24h)
     st_val = int(st_trend.iloc[-1])
@@ -189,7 +190,7 @@ def _score_signals(df_24h, df_daily):
         ichi_score = 0
         signals['Ichimoku'] = (0, '数据不足')
 
-    # ── 资金动量 (30分) ──────────────────────────────────
+    # --- 资金动量 (30分) ---
     # MACD (12分)
     macd_line, macd_sig, macd_hist = _macd(df_24h)
     macd_cross = cross_detect(macd_line.dropna(), macd_sig.dropna())
@@ -226,7 +227,7 @@ def _score_signals(df_24h, df_daily):
     signals['VWAP'] = (vwap_score,
                        f'价格{"上方" if vwap_score > 0 else "下方"} ({vwap_score:+d})')
 
-    # ── 情绪极值 (20分) ──────────────────────────────────
+    # --- 情绪极值 (20分) ---
     # RSI 背离 (12分)
     rsi = _rsi(df_24h)
     rsi_val = rsi.dropna().iloc[-1] if not rsi.dropna().empty else 50
@@ -262,7 +263,7 @@ def _score_signals(df_24h, df_daily):
         wr_score = 0
     signals['Williams%R'] = (wr_score, f'{wr_val:.1f} ({wr_score:+d})')
 
-    # ── 宏观背景 (15分) ──────────────────────────────────
+    # --- 宏观背景 (15分) ---
     macro_score = 0
     macro_descs = []
     if not df_daily.empty and len(df_daily) >= 50:
@@ -283,7 +284,7 @@ def _score_signals(df_24h, df_daily):
             macro_descs.append(f'MA50{"↑" if m50_score > 0 else "↓"}({m50_score:+d})')
     signals['宏观均线'] = (macro_score, ', '.join(macro_descs) if macro_descs else '数据不足')
 
-    # ── 市场状态修正 ──────────────────────────────────────
+    # --- 市场状态修正 ---
     chop = _chop(df_24h)
     chop_val = chop.dropna().iloc[-1] if not chop.dropna().empty else 50
     if chop_val < 38.2:
@@ -459,9 +460,7 @@ def _calc_targets(close, sl, direction, rr_ratios=(1.0, 2.0, 3.0)):
     return targets
 
 
-# ==========================================
-# 主函数
-# ==========================================
+# --- 主函数 ---
 
 def entry_signal(symbol: str, optional_symbol: str | None = None) -> str:
     """
@@ -473,6 +472,14 @@ def entry_signal(symbol: str, optional_symbol: str | None = None) -> str:
 
     输出:
         str: LLM 可读的综合入场分析报告
+
+    LLM 决策指南:
+    - 评分 ≥ 65: 强烈做多，可市价入场；评分 ≤ -65: 强烈做空。
+    - 评分 40~64: 偏多/偏空，建议等待回踩入场，避免追涨杀跌。
+    - 评分 -39~39: 观望，信号不明确时不入场是最好的仓位。
+    - 震荡市 (CHOP > 61.8) 时信号可靠性下降，优先缩仓或跳过。
+    - 结构止损最优先: 比 ATR 止损更贴近真实支撑/阻力。
+    - 止盈分批兑现: T1 保本平本，T2 锁利，T3 放飞利润。
     """
     df = load_bars(symbol)
     if df.empty:
@@ -485,11 +492,11 @@ def entry_signal(symbol: str, optional_symbol: str | None = None) -> str:
     df_daily = resample_daily(df)
     close = float(df_24h['close'].iloc[-1])
 
-    # ── 评分 ─────────────────────────────────────────────
+    # --- 评分 ---
     final_score, signals, market_state, chop_val, vwap_val, rsi_val = \
         _score_signals(df_24h, df_daily)
 
-    # ── 方向判断 ──────────────────────────────────────────
+    # --- 方向判断 ---
     if final_score >= 40:
         direction = 1
         direction_str = '做多 (LONG)'
@@ -503,7 +510,7 @@ def entry_signal(symbol: str, optional_symbol: str | None = None) -> str:
         direction_str = '观望 (WAIT)'
         confidence = '低'
 
-    # ── 止损/止盈 ─────────────────────────────────────────
+    # --- 止损/止盈 ---
     sections = []
 
     # 评分概览
@@ -526,7 +533,7 @@ def entry_signal(symbol: str, optional_symbol: str | None = None) -> str:
         stops = _calc_stops(df_24h, close, direction, vwap_val)
         atr = stops['atr']
 
-        # ── 入场区间 (三种策略) ───────────────────────────
+        # --- 入场区间 (三种策略) ---
         zones = _calc_entry_zones(close, direction, vwap_val, stops)
         zone_lines = []
         for name, price, detail, advice in zones:
@@ -535,7 +542,7 @@ def entry_signal(symbol: str, optional_symbol: str | None = None) -> str:
             zone_lines.append(f'   适用: {advice}')
         sections.append(('入场区间', '\n  ' + '\n  '.join(zone_lines)))
 
-        # ── 四种止损方法 ─────────────────────────────────
+        # --- 四种止损方法 ---
         sl_methods = []
         sl_atr_pct = abs(close - stops['sl_atr']) / close * 100
         sl_struct_pct = abs(close - stops['sl_structure']) / close * 100
@@ -552,7 +559,7 @@ def entry_signal(symbol: str, optional_symbol: str | None = None) -> str:
         sl_methods.append(f"④ 百分比止损:  1%={pct_sl[0.01]:.4f}  |  2%={pct_sl[0.02]:.4f}  |  3%={pct_sl[0.03]:.4f}")
         sections.append(('止损方案 (四选一)', '\n  ' + '\n  '.join(sl_methods)))
 
-        # ── 动态止盈目标 (基于结构止损 + 动态 R/R) ────────
+        # --- 动态止盈目标 (基于结构止损 + 动态 R/R) ---
         rr_ratios, rr_state, rr_atr_note = _dynamic_rr(chop_val, atr, stops['atr_mean'])
         sl_for_tp = stops['sl_structure']
         targets = _calc_targets(close, sl_for_tp, direction, rr_ratios=rr_ratios)
@@ -562,13 +569,13 @@ def entry_signal(symbol: str, optional_symbol: str | None = None) -> str:
                             f'({"+" if direction == 1 else "-"}{pct:.2f}%,  R/R = 1:{rr})')
         sections.append(('止盈目标 (动态R/R)', '\n  ' + '\n  '.join(tp_lines)))
 
-        # ── 参考价格 ─────────────────────────────────────
+        # --- 参考价格 ---
         sections.append(('关键价格参考',
                          f'当前: {close:.4f}  |  VWAP: {vwap_val:.4f}  |  ATR: {atr:.4f}\n  '
                          f'ST下轨: {stops["st_lower"]:.4f}  |  ST上轨: {stops["st_upper"]:.4f}\n  '
                          f'近20根低点: {stops["swing_low"]:.4f}  |  近20根高点: {stops["swing_high"]:.4f}'))
 
-        # ── 注意事项 ─────────────────────────────────────
+        # --- 注意事项 ---
         warnings = []
         if chop_val > 61.8:
             warnings.append('⚠ 震荡市，信号可靠性下降，建议缩小仓位或使用百分比止损')

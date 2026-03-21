@@ -21,9 +21,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'
 from tools.calculate import load_bars, get_recent_24h, format_report
 
 
-# ==========================================
-# 内部工具
-# ==========================================
+# --- 内部工具 ---
 
 def _get_atr_stats(symbol: str) -> tuple[float, float, float]:
     """
@@ -52,9 +50,7 @@ def _get_atr_stats(symbol: str) -> tuple[float, float, float]:
     return float(atr_series.iloc[-1]), float(atr_series.mean()), float(close.iloc[-1])
 
 
-# ==========================================
-# ① 固定风险模型
-# ==========================================
+# --- ① 固定风险模型 ---
 
 def fixed_risk_size(
     account_equity: float,
@@ -63,18 +59,15 @@ def fixed_risk_size(
     risk_pct: float = 0.01,
 ) -> dict:
     """
-    固定风险模型: 每笔最大亏损 = 账户 × risk_pct
+    固定风险模型: 每笔最大亏损 = 账户 × risk_pct。
 
     公式: 数量 = (账户 × 风险%) / |入场价 - 止损价|
 
-    Parameters:
-        account_equity: 账户总权益 (如 10000 USDT)
-        entry_price:    计划入场价格
-        stop_loss:      止损价格
-        risk_pct:       单笔风险占比 (默认 0.01 = 1%)
-
-    Returns:
-        dict: units, risk_amount, position_value, leverage_needed
+    LLM 逻辑:
+    - 这是最常用的仓位模型，不依赖历史数据，任何人都可用。
+    - risk_pct = 0.01 (保守) / 0.02 (标准) / 0.03 (激进)。
+    - leverage_needed > 3x 时应警惕，> 5x 时建议拒绝入场。
+    - 止损距离越小，单位数越大，杠杆越高，注意洗盘风险。
     """
     risk_amount = account_equity * risk_pct
     risk_per_unit = abs(entry_price - stop_loss)
@@ -97,9 +90,7 @@ def fixed_risk_size(
     }
 
 
-# ==========================================
-# ② 凯利公式
-# ==========================================
+# --- ② 凯利公式 ---
 
 def kelly_size(
     account_equity: float,
@@ -112,19 +103,12 @@ def kelly_size(
 
     W = 胜率, R = 盈亏比 (avg_win / avg_loss)
 
-    LLM 指南:
-    - 实际使用 半凯利 (fraction=0.5) 避免过度下注
-    - Kelly < 0: 期望为负，该策略不值得交易
-    - Kelly > 25%: 通常认为过于激进，建议上限 25%
-
-    Parameters:
-        account_equity: 账户权益
-        win_rate:  历史胜率 (0-1, 如 0.55)
-        avg_rr:    历史平均盈亏比 (如 2.0 = 盈利是亏损的2倍)
-        fraction:  凯利分数 (默认 0.5 = 半凯利)
-
-    Returns:
-        dict: kelly_pct, half_kelly_pct, recommended_equity
+    LLM 逻辑:
+    - 实际使用 半凯利 (fraction=0.5) 避免过度下注，回撤更小。
+    - Kelly < 0: 期望收益为负，该策略不值得交易，直接放弃。
+    - Kelly > 25%: 上限截断，过于激进的建议不可信 (样本不足)。
+    - 胜率数据至少需要 30 笔历史交易才有统计意义。
+    - 配合固定风险模型使用: Kelly 给方向，固定风险给上限。
     """
     if win_rate <= 0 or win_rate >= 1:
         return {'error': f'胜率 {win_rate} 无效，需在 (0, 1) 范围内'}
@@ -156,9 +140,7 @@ def kelly_size(
     }
 
 
-# ==========================================
-# ③ 波动率调整仓位
-# ==========================================
+# --- ③ 波动率调整仓位 ---
 
 def volatility_adjusted_size(
     base_units: float,
@@ -170,21 +152,15 @@ def volatility_adjusted_size(
     """
     波动率调整: 使每笔交易的"波动暴露"保持恒定。
 
-    逻辑: 当 ATR 高时，价格随机波动更大 → 减仓；
-         当 ATR 低时，波动平静 → 可适当加仓。
-
     公式: adjusted = base × (target_atr_pct / current_atr_pct)
-    限制: 调整因子被约束在 [0.3, 2.0] 范围内
+    限制: 调整因子约束在 [0.3, 2.0] 范围内。
 
-    Parameters:
-        base_units:      固定风险模型给出的基础仓位
-        current_atr:     当前 ATR
-        avg_atr:         历史平均 ATR (用于判断相对水平)
-        entry_price:     入场价格
-        target_atr_pct:  目标波动率占价格的比例 (默认 2%)
-
-    Returns:
-        dict: adjusted_units, vol_modifier, vol_ratio, reason
+    LLM 逻辑:
+    - ATR 是波动率的直接度量，ATR 高 → 价格随机噪音大 → 减仓。
+    - ATR 低 → 波动平静，趋势更干净 → 可适当加仓至基础量2倍。
+    - vol_ratio > 1.5x 均值: 高波动，强制缩仓，保护本金。
+    - vol_ratio < 0.7x 均值: 低波动，可放大仓位，提升资金效率。
+    - 始终以固定风险模型结果作为基准，本函数只做倍率微调。
     """
     if avg_atr <= 0 or current_atr <= 0 or entry_price <= 0:
         return {
@@ -216,9 +192,7 @@ def volatility_adjusted_size(
     }
 
 
-# ==========================================
-# 主函数
-# ==========================================
+# --- 主函数 ---
 
 def position_size(
     symbol: str,
@@ -232,7 +206,7 @@ def position_size(
     """
     主函数: 综合输出三种仓位计算方案。
 
-    Parameters:
+    输入:
         symbol:         标的代码 (用于获取 ATR 数据)
         account_equity: 账户权益 (USDT/USD/CNY)
         entry_price:    计划入场价格
@@ -241,8 +215,15 @@ def position_size(
         win_rate:       历史胜率 (可选，填写后输出 Kelly 建议)
         avg_rr:         历史平均盈亏比 (与 win_rate 配合使用)
 
-    Returns:
+    输出:
         str: LLM 可读的仓位管理报告
+
+    LLM 决策指南:
+    - 优先看 ① 固定风险: 数量直接可用，杠杆 < 3x 才安全。
+    - ② 波动率调整是修正因子: ATR 高时主动减仓，低时小幅加仓。
+    - ③ Kelly 仅供参考: 没有足够历史数据时忽略此项。
+    - 最终下单数量 = min(固定风险数量, 波动率调整数量)。
+    - 单笔风险永远不超过账户 2%，这是资金存活的核心纪律。
     """
     current_atr, avg_atr, _ = _get_atr_stats(symbol)
 
@@ -259,7 +240,7 @@ def position_size(
                      f'权益: {account_equity:,.2f}  |  '
                      f'单笔风险: {risk_pct*100:.1f}% = {risk_amount:,.4f}'))
 
-    # ── ① 固定风险模型 ───────────────────────────────────
+    # --- ① 固定风险模型 ---
     fr = fixed_risk_size(account_equity, entry_price, stop_loss, risk_pct)
     if 'error' in fr:
         sections.append(('固定风险仓位', f'计算失败: {fr["error"]}'))
@@ -269,7 +250,7 @@ def position_size(
                          f'持仓市值: {fr["position_value"]:,.4f}  |  '
                          f'所需杠杆: {fr["leverage_needed"]:.3f}x'))
 
-    # ── ② 波动率调整仓位 ─────────────────────────────────
+    # --- ② 波动率调整仓位 ---
     if current_atr > 0 and 'error' not in fr:
         va = volatility_adjusted_size(
             fr['units'], current_atr, avg_atr, entry_price, target_atr_pct=0.02
@@ -282,7 +263,7 @@ def position_size(
     elif 'error' not in fr:
         sections.append(('② 波动率调整仓位', '无ATR数据，使用固定风险数量'))
 
-    # ── ③ 凯利公式 (可选) ────────────────────────────────
+    # --- ③ 凯利公式 (可选) ---
     if win_rate is not None and avg_rr is not None:
         kelly = kelly_size(account_equity, win_rate, avg_rr)
         if 'error' in kelly:
@@ -299,7 +280,7 @@ def position_size(
     else:
         sections.append(('③ Kelly仓位', '未提供 win_rate / avg_rr，跳过 (建议回测后填入)'))
 
-    # ── 风险提示 ─────────────────────────────────────────
+    # --- 风险提示 ---
     warnings = []
     if 'error' not in fr:
         if fr['leverage_needed'] > 5:
