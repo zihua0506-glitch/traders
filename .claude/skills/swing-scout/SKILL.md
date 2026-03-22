@@ -102,40 +102,68 @@ python3 cli/stock_data.py minute {SYMBOLS} --minutes 60
 - 如果关注个股多为科技股，加 QQQ
 - 如果关注能源/国防股，加 SPY XLE
 
-### Phase 4: 量化分析
+### Phase 4: 量化分析与仓位计算
 
-对 Phase 2 筛选出的每个 symbol，执行量化验证：
+对 Phase 2 筛选出的每个 symbol，**综合 Phase 1-3 的所有信息自主判断**该用哪些工具、以什么顺序执行。下面是可用工具清单和选择指南，不是固定流程——你需要像交易员一样思考，根据具体情况灵活组合。
 
-**Step 4a: 获取情绪和价位**
+#### 可用工具清单
 
+| 工具 | 用途 | 何时用 |
+|------|------|--------|
+| `tools/smart_money.py` | 机构资金流向 (VWAP/MFI/CMF/MACD) | 想知道机构在吸筹还是出货 |
+| `tools/trend_structure.py` | 趋势结构 (Ichimoku/SuperTrend/SAR) | 想确认趋势方向和支撑阻力 |
+| `tools/market_psychology.py` | 情绪极值 (Williams%R/CCI/RSI) | 想知道是否超买超卖、有无背离 |
+| `tools/votality_risk.py` | 波动率风控 (Keltner/TTM/CHOP/ATR) | 想判断震荡市还是趋势市、计算止损 |
+| `tools/macro_lines.py` | 宏观均线 (MA200/MA50/EMA21/EMA169) | 想看牛熊分界和均线排列 |
+| `tools/alpha.py` | Alpha因子 (Z-Score/Hurst/熵/量比等) | 想做深度统计分析 |
+| `tools/entry_signal.py` | 入场信号聚合 (±100评分) | 想要综合评分和具体入场/止损/止盈价 |
+| `tools/position_sizing.py` | 仓位计算 (固定风险/凯利/波动率调整) | 已确定入场价和止损价，要算买多少 |
+
+所有分析工具统一调用格式：
+```bash
+python tools/<module>.py {SYMBOL} [--vs SPY]
+```
+
+仓位计算调用格式：
+```bash
+python tools/position_sizing.py {SYMBOL} {账户权益} {入场价} {止损价} [--risk 0.01] [--winrate 0.5] [--rr 2.0]
+```
+
+#### 工具选择指南
+
+**你不需要每次运行所有工具。** 根据 Phase 1-3 收集到的信息，自主判断：
+
+**情绪/价位获取（每个 symbol 必做）**：
 ```bash
 python -c "from tools.calculate import format_sentiment_report, get_concrete_price; print(format_sentiment_report('{SYMBOL}')); print(get_concrete_price('{SYMBOL}'))"
 ```
 
-**Step 4b: 根据新闻方向选择分析工具**
+**然后根据具体情况选择工具组合**，以下是典型场景参考（不是强制规则）：
 
-| 新闻方向 | 必调工具 | 目的 |
-|---------|---------|------|
-| 利多（做多） | trend_structure + smart_money | 确认趋势支撑 + 资金是否跟进 |
-| 利空（做空） | market_psychology + votality_risk | 检查是否已超卖 + 波动率状态 |
-| 不确定 | entry_signal（综合评分） | 让评分体系决定方向 |
+| 场景 | 推荐组合 | 理由 |
+|------|---------|------|
+| 突发利多 + 想做多 | trend_structure → smart_money → entry_signal | 确认趋势支撑、资金跟进、然后拿入场价 |
+| 突发利空 + 想做空 | market_psychology → votality_risk → entry_signal | 检查是否已超卖、波动率状态、然后拿入场价 |
+| 油价飙升 + 能源股 | macro_lines → trend_structure → entry_signal | 看大趋势位置、确认突破、拿入场价 |
+| 地缘冲突 + 高波动 | votality_risk → market_psychology → entry_signal | 先看波动率环境、再看情绪极值 |
+| 方向不确定 | entry_signal（先跑综合评分决定方向） | 让评分体系告诉你方向 |
+| 想深度挖掘 | alpha → 任意组合 | 统计因子发现隐藏信号 |
 
+**关键判断原则**：
+- 如果新闻催化剂非常强（如战争升级、重大政策），技术面权重降低，新闻权重升高
+- 如果新闻方向和技术面矛盾，降低置信度，不要强行入场
+- 背离信号（RSI/MFI/CCI）优先级最高，出现背离必须重视
+- 波动率异常高时（ATR 远超均值），必须跑 votality_risk 确认止损距离
+
+**入场信号确认后，计算仓位（ACTIONABLE 的 symbol 必做）**：
+
+从 entry_signal 输出中提取入场价和止损价，然后：
 ```bash
-# 示例：利多方向
-python tools/trend_structure.py {SYMBOL} --vs SPY
-python tools/smart_money.py {SYMBOL}
+# 基础仓位计算（默认1%风险）
+python tools/position_sizing.py {SYMBOL} {账户权益} {入场价} {止损价}
 
-# 示例：利空方向
-python tools/market_psychology.py {SYMBOL}
-python tools/votality_risk.py {SYMBOL}
-```
-
-**Step 4c: 入场信号**
-
-对置信度较高的 symbol 执行：
-
-```bash
-python tools/entry_signal.py {SYMBOL}
+# 高波动市场建议降低风险到0.5%
+python tools/position_sizing.py {SYMBOL} {账户权益} {入场价} {止损价} --risk 0.005
 ```
 
 将分析结果追加到报告：
@@ -148,12 +176,20 @@ News Direction: {LONG/SHORT}
 Sentiment Score: {score}
 Current Price: {price}
 
+Tool Selection Rationale: {why these tools were chosen}
+
 Technical Signals:
   - {tool_name}: {key finding}
   - ...
 
 Entry Signal Score: {score}/100
 Direction: {LONG/SHORT/NEUTRAL}
+Entry: ${price} | Stop: ${price} | Target: ${price}
+
+Position Sizing (if ACTIONABLE):
+  Model: {fixed_risk/kelly/volatility_adjusted}
+  Recommended Shares: {number}
+  Risk Per Trade: ${amount} ({percent}% of account)
 ```
 
 ### Phase 5: 综合判断
