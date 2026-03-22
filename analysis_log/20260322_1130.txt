@@ -1,0 +1,301 @@
+=== SWING SCOUT REPORT ===
+Date: 2026-03-22 (Sunday)
+Generated: 2026-03-22 11:30
+Next Trading Day: 2026-03-23 (Monday)
+
+== Phase 1: Social Media Scan ==
+
+[TSLA] SpaceX TERAFAB mega-project announced with Tesla partnership for trillion-watt compute | BULLISH
+  - Musk announced "SpaceXAI + Tesla TERAFAB Project" targeting 1 trillion watts of compute/year
+  - SpaceX valued at $1.25T, targeting $1.75T IPO in 2026
+  - Event held in Austin, TX with massive media coverage (8.6M+ views on tweet)
+  - Grok "Connectors" feature announced (PayPal, Stripe, GitHub, AWS integration)
+
+[OXY] Oil price surge from Iran/Strait of Hormuz crisis | BULLISH
+  - Reddit user posted gains from OXY calls
+  - United Airlines planning for oil at $175/barrel
+  - WSB heavily discussing oil plays
+
+[XOM/CVX] Oil majors benefiting from Middle East escalation | BULLISH
+  - Oil closed at highest in nearly 4 years before weekend
+  - Analysts expect further rise Monday
+  - US-Iran threats to target energy facilities
+
+[UAL/DAL/AAL] Airlines face worst shock since COVID from oil spike | BEARISH
+  - United Airlines explicitly planning for $175/barrel scenario
+  - "Worst shock since COVID" language from Fortune article
+  - Capacity cuts expected
+
+[LMT/RTX/NOC] Defense stocks from Iran war escalation + Cuba threats | BULLISH
+  - Trump 48-hour ultimatum to Iran to open Strait of Hormuz
+  - Trump also hinting at "taking Cuba"
+  - War expected to last years per some Reddit sentiment
+
+[UAMY] Antimony defense supply chain play | MIXED
+  - Down 15% from recent buy, FY2025 numbers discussed
+  - Niche defense material play
+
+[SPY/QQQ] Broad market fear from geopolitical escalation | BEARISH
+  - Multiple posts about hedging, fear & greed index
+  - "Private credit is 2008" concerns on WSB
+  - AI stocks pullback discussion
+
+Search Plan:
+  1. "Iran Strait of Hormuz Trump ultimatum 48 hours" - verify exact timing and current status
+  2. "Oil price Monday March 23 2026 forecast" - confirm oil futures direction
+  3. "SpaceX TERAFAB Tesla announcement details" - verify scope and market reaction
+  4. "Trump Cuba invasion March 2026" - verify seriousness and market impact
+  5. "China Li Qiang trade opening tariffs March 2026" - verify details and US stock impact
+  6. "United Airlines oil $175 capacity cuts" - verify airline exposure details
+  7. "Defense stocks Iran war escalation" - check if already priced in Friday
+
+== Phase 2: Breaking News Verification ==
+
+[UNPRICED] Trump gives Iran 48-hour ultimatum to reopen Strait of Hormuz or face destruction of power plants
+  Source: The Guardian, Al Jazeera, Reuters, NBC News, Axios, Politico (all confirmed)
+  Time: Saturday night March 21, 2026 (after market close). Deadline: Monday 23:44 GMT (~7:44pm ET)
+  Details:
+    - Trump posted on Truth Social: will "hit and obliterate" Iranian power plants "starting with the biggest one first"
+    - Iran defiant: army said it will target US/Israeli energy and desalination infrastructure in the region
+    - IRGC says will "completely close" Hormuz if Trump acts on threats (escalation from partial closure)
+    - Two Iranian missiles struck southern Israel (Dimona, Arad), 100+ injured - most destructive attack yet
+    - Netanyahu vowed retaliation "on all fronts", Israeli strikes on Tehran followed
+    - UAE also under aerial attack from Iran
+    - Natanz nuclear facility struck
+    - International coalition (UK, France, Italy, Germany, etc.) condemned Hormuz closure
+    - Japan considering military minesweeping deployment
+    - War now in 4th week
+  Impact: OXY/XOM/CVX LONG | UAL/DAL/AAL SHORT | LMT/RTX/NOC LONG | SPY/QQQ SHORT
+
+[UNPRICED] Oil prices set to surge further Monday - Brent >$105, WTI ~$98
+  Source: Yahoo Finance, Reuters, multiple analysts
+  Time: Weekend analysis, futures expected to gap up Monday
+  Details:
+    - Brent crude above $105/barrel, near 4-year highs
+    - WTI futures ~$98/barrel, in backwardation
+    - Analysts forecast $100-$130 range if conflict escalates
+    - US started emergency crude release from SPR
+    - US gas could hit $4.50-$6.00/gallon
+  Impact: OXY/XOM/CVX LONG | UAL/DAL/AAL SHORT
+
+[UNPRICED] United Airlines planning for $175/barrel oil - worst shock since COVID
+  Source: Fortune (via CEO Scott Kirby employee letter, posted Friday after hours)
+  Time: Friday March 21, after market close (letter details emerged Saturday)
+  Details:
+    - Jet fuel prices more than doubled in 3 weeks
+    - Additional $11 billion in annual fuel costs at current prices
+    - 2025 fuel spend was $11.4B, could exceed $20B in 2026
+    - 2025 adjusted net income was only $3.5B (fuel increase alone wipes out profits)
+    - But: demand remains strong, last 10 weeks = best booked revenue weeks ever
+    - Planning scenario: oil at $175/barrel, staying above $100 through 2027
+  Impact: UAL SHORT (primary), DAL/AAL SHORT (secondary)
+
+[PARTIALLY UNPRICED] SpaceX TERAFAB + Tesla chip factory announcement
+  Source: WSJ, Bloomberg (confirmed Saturday night)
+  Time: Saturday evening March 21, Austin TX presentation
+  Details:
+    - Tesla + SpaceX to build massive chip fab in Austin, TX called "Terafab"
+    - Chips for Tesla vehicles, Optimus robots, and SpaceX satellites
+    - SpaceX involvement was NOT previously known (new info)
+    - Morgan Stanley estimates costs over $20 billion over multiple years
+    - Musk: "We either build the Terafab or we don't have the chips"
+    - TSLA already down 3.24% on Friday (broader market selloff)
+    - Mixed signal: massive capex commitment in uncertain macro environment
+  Impact: TSLA MIXED (bullish vision vs bearish capex + macro headwinds)
+
+[ALREADY PRICED] Defense stocks surge since war started
+  Source: Multiple financial outlets
+  Time: Ongoing since late February, war week 3-4
+  Details:
+    - LMT closed ~$625 on March 19, up ~22% since Feb 28
+    - RTX is "purest munitions play" per analysts
+    - LMT -1.58%, RTX -1.28%, NOC -1.01% on Friday (minor pullback)
+    - Defense budget expansion confirmed
+    - HOWEVER: 48-hour ultimatum is NEW weekend catalyst - may gap up further Monday
+  Impact: LMT/RTX/NOC potential additional LONG on ultimatum escalation
+
+[NOISE] Trump "taking Cuba" rhetoric
+  Source: CNN, Guardian, multiple outlets
+  Time: Earlier in the week, ongoing
+  Details:
+    - Cuba under severe pressure: oil blockade, two nationwide blackouts
+    - Negotiations happening but Trump rhetoric aggressive
+    - Cuba released 51 prisoners, announced reforms
+    - No imminent military invasion - diplomatic/economic pressure play
+    - No specific individual stock impact for US equities
+  Impact: SKIP - no actionable trade
+
+[NOT VERIFIED] China Li Qiang trade opening
+  Source: Reuters snippet on Reddit
+  Details: Standard diplomatic language, no specific actionable catalyst
+  Impact: SKIP
+
+Final Watch List (unpriced events only):
+  OXY   | LONG  | Iran ultimatum + oil surge to $100-130     | HIGH
+  XOM   | LONG  | Iran ultimatum + oil surge                  | HIGH
+  CVX   | LONG  | Iran ultimatum + oil surge                  | HIGH
+  UAL   | SHORT | $175/bbl scenario + fuel cost doubling       | HIGH
+  DAL   | SHORT | Oil spike + airline sector drag              | MED
+  TSLA  | MIXED | TERAFAB bullish but macro headwinds          | MED
+  LMT   | LONG  | Ultimatum escalation (partially priced)     | MED
+  RTX   | LONG  | Munitions demand + escalation                | MED
+
+== Phase 3: Data Sync ==
+Synced daily + intraday bars for: OXY, XOM, CVX, UAL, DAL, TSLA, LMT, RTX
+Synced daily bars for benchmarks: QQQ, SPY, XLE
+Status: All successful
+
+== Phase 4: Quantitative Analysis ==
+
+--- OXY (LONG direction) ---
+News Direction: LONG (oil surge catalyst)
+Current Price: $60.79 | VWAP: $60.82 | ATR: $0.039
+24h Range: $58.86 - $62.95
+
+Trend Structure:
+  - Ichimoku: price above Kijun (+0.06%), TK bullish cross
+  - SuperTrend: BULLISH (price above ST)
+  - SAR: Uptrend (SAR support below)
+  - Multi-timeframe: Micro bullish, macro insufficient data
+
+Smart Money:
+  - VWAP: price slightly below (-0.05%) - neutral
+  - MFI: severely oversold (0.0) - contrarian bullish
+  - CMF: strong accumulation (0.742) - BULLISH
+  - MACD: bullish cross, momentum accelerating (+52.69%)
+
+Entry Signal Score: +28/100 (WAIT)
+  Positives: SuperTrend bullish, SAR up, CMF accumulation, MACD momentum
+  Negatives: price below VWAP, choppy market (72.7)
+  Note: Low quant score BUT driven by weekend gap potential not captured by intraday technicals
+
+--- XOM (LONG direction) ---
+News Direction: LONG (oil surge catalyst)
+Current Price: $159.89 | VWAP: $160.14 | ATR: $0.21
+24h Range: $157.00 - $162.44
+
+Trend Structure:
+  - Ichimoku: price above Kijun (+0.11%), but TK bearish cross
+  - SuperTrend: BULLISH
+  - SAR: Downtrend (bearish)
+  - Mixed signals
+
+Smart Money:
+  - CMF: -1.0 (distribution) - BEARISH
+  - VWAP: price below (-0.08%) - bearish
+  - MACD: bullish cross, above zero
+
+Entry Signal Score: 0/100 (WAIT)
+  Note: Technicals flat/mixed, but unpriced oil catalyst is the driver
+
+--- UAL (SHORT direction) ---
+News Direction: SHORT (oil cost explosion)
+Current Price: $91.29 | VWAP: $90.49 | ATR: $0.11
+24h Range: $88.41 - $94.65
+
+Market Psychology:
+  - Williams%R: extremely oversold (-84.0) - already beaten down
+  - CCI: neutral-bearish (-34.7)
+  - RSI: neutral (47.2), trending up
+  - Composite: partially oversold, watching for stabilization
+
+Volatility Risk:
+  - Keltner: inside channel (36.7% position - low)
+  - Squeeze: OFF (energy released), momentum DOWN but reversing
+  - CHOP: strongly choppy (67.2) - range-bound market
+  - ATR: low volatility (-0.61σ)
+
+Entry Signal Score: +14/100 (WAIT - slightly bullish contradiction!)
+  Note: Quant shows oversold bounce potential, CONTRADICTS news direction
+  Warning: Short squeeze risk if oil negotiation progress emerges
+
+--- TSLA (MIXED direction) ---
+News Direction: MIXED (TERAFAB bullish, macro bearish)
+Current Price: $372.25 | VWAP: $371.54 | ATR: $0.21
+24h Range: $345.55 - $384.60
+
+Trend Structure:
+  - Ichimoku: price above Kijun (+0.21%), TK bullish
+  - SuperTrend: BULLISH
+  - SAR: Uptrend
+  - Strong trend market (CHOP 28.9)
+
+Entry Signal Score: +61/100 (LONG)
+  Positives: SuperTrend, SAR, Ichimoku, CMF accumulation (0.877), above VWAP
+  Negatives: RSI overbought (78.5), Williams%R overbought
+  Entry: market @ $372.25 or pullback @ $371.86
+  Stop: $370.74 (structure) | Target: T1 $374.83, T2 $377.40, T3 $381.03
+  WARNING: RSI overbought, do NOT chase. Wait for pullback entry.
+
+--- LMT (LONG direction) ---
+News Direction: LONG (defense escalation)
+Current Price: $625.31
+
+Entry Signal Score: -2/100 (WAIT)
+  Negatives: MACD death cross (-12), CMF distribution (-1.0), below VWAP
+  Positives: SuperTrend bullish, SAR up, Williams%R oversold (-86.8)
+  Note: Already up 22% since war started. Technicals showing exhaustion.
+  Potential for one more leg up on ultimatum escalation but risk/reward weak.
+
+== Phase 5: Final Verdict ==
+
+MACRO CONTEXT:
+  - US-Iran war week 4, extreme geopolitical uncertainty
+  - Trump 48h ultimatum deadline: Monday 23:44 GMT (~7:44pm ET)
+  - Iran defiant, threatening COMPLETE Hormuz closure if attacked
+  - Oil: Brent >$105, WTI ~$98, could reach $130 if escalation
+  - Fear & Greed Index at EXTREME FEAR (15)
+  - SPR emergency release initiated
+  - Monday will be highly volatile - gap risk both ways
+
+ACTIONABLE:
+  OXY | LONG | Confidence: MED
+    Catalyst: Iran ultimatum + oil surge above $105, potential $130 if escalation
+    Entry: Gap up expected - wait for first 15min to establish range
+    Stop: Below Friday's low $58.86 (-3.2%) | Target: $63-65 (+4-7%)
+    News Score: STRONG (unpriced weekend ultimatum + oil surge)
+    Quant Score: +28/100 (weak but CMF shows institutional accumulation)
+    Risk: Sudden ceasefire/deal announcement would crash oil stocks
+    Strategy: Small position, trail stop. News-driven, not technical.
+
+  TSLA | LONG | Confidence: MED
+    Catalyst: TERAFAB announcement (SpaceX partnership, new chip fab)
+    Entry: Pullback to $371.86 (structure support) | Stop: $370.74 (-0.41%)
+    Target: T1 $374.83, T2 $377.40, T3 $381.03
+    News Score: MODERATE (TERAFAB is vision play, not immediate revenue)
+    Quant Score: +61/100 (strongest technical signal of all candidates)
+    Risk: RSI overbought (78.5), macro selloff could overwhelm catalyst
+    Strategy: Wait for pullback, do NOT chase gap up. Best R/R of all candidates.
+
+WATCH (not actionable yet):
+  UAL | SHORT direction has merit from news, but quant shows OVERSOLD bounce
+    Reason: Williams%R at -84 (extremely oversold), CMF positive, above VWAP
+    The $175/bbl scenario is devastating for airlines BUT stock may have already
+    priced in much of the oil shock over past 3 weeks of war.
+    Action: Watch for failed bounce at $93-95 resistance, then short on rejection.
+
+  XOM | LONG direction from oil surge, but technicals FLAT
+    Reason: Entry signal 0/100, CMF showing distribution (-1.0), SAR bearish
+    Oil price catalyst is real but XOM may have already captured most of the move.
+    Action: Only enter on clear breakout above $162.44 (Friday high) with volume.
+
+  LMT | LONG direction from defense demand, but EXHAUSTED
+    Reason: Already +22% since war started, MACD death cross, CMF distribution
+    Entry signal -2/100 shows institutional profit-taking underway.
+    Action: Only re-enter on significant new escalation (actual strikes on Iran).
+
+SKIP:
+  CVX | Same thesis as XOM but no individual analysis run - use XOM as proxy
+  DAL | Same thesis as UAL but no individual analysis run - use UAL as proxy
+  AAL | Same thesis as UAL
+  RTX | Same thesis as LMT
+  UAMY | Too small/illiquid, no reliable data
+
+KEY RISK FACTORS FOR MONDAY:
+  1. Iran compliance before deadline = oil crash + airline bounce + defense drop
+  2. US strike on Iran = oil to $130+ / Hormuz fully closed / market panic
+  3. Diplomatic backchannels progress = uncertainty, choppy trading
+  4. Outcome unknown until Monday evening ET - position size accordingly
+  5. Gap risk is EXTREME on all names - use small positions and wide stops
+
+=== END OF REPORT ===
