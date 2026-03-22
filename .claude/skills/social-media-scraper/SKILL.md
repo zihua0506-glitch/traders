@@ -11,10 +11,10 @@ description: 社交媒体数据抓取工具。当用户想抓取、查看、获�
 
 ```bash
 # 默认抓取最近 24 小时（1440 分钟）
-python cli/social_media_cli.py
+python3 cli/social_media_cli.py
 
 # 抓取最近 60 分钟
-python cli/social_media_cli.py --minutes 60
+python3 cli/social_media_cli.py --minutes 60
 ```
 
 ## 数据源配置
