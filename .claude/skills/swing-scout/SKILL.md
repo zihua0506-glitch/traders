@@ -11,7 +11,8 @@ description: 超短线股票机会扫描工具。当用户想进行超短线交�
 
 - **只关注超短线**：自上一个交易日收盘（美东 4pm）以来的突发新闻，不做长线推演
 - **只关注未定价事件**：盘后/周末/节假日发生的、下一个交易日开盘才会反映的事件
-- **新闻先行，量化验证**：先确定"为什么会动"，再用技术面确认"怎么动"
+- **社媒发现，新闻验证，量化确认**：先用社媒找到线索，再用新闻确认催化剂，最后用量化决定交易结构
+- **最终结论由 LLM 综合裁决**：Phase 5 必须显式综合社媒、新闻、量化三类结果，不能只机械跟随单一分数
 - **只看纳指100和标普500成分股**：Phase 1 提取的 symbol 必须属于这两个指数，非成分股标记为 SKIP
 - **结果全部落盘**：所有分析写入 `analysis_log/{YYYYMMDD_HHMM}.txt`
 
@@ -202,7 +203,17 @@ python3 tools/position_sizing.py {SYMBOL} {账户权益} {入场价} {止损价}
 ```bash
 python3 -c "from tools.calculate import format_sentiment_report, get_concrete_price; print(format_sentiment_report('{SYMBOL}')); print(get_concrete_price('{SYMBOL}'))"
 ```
-如果情绪或价位数据返回空/报错，记录失败原因，该 symbol 跳过后续量化分析，在 Phase 5 标记为 SKIP。
+如需在 Phase 4 / Phase 5 写入明确的社媒分数，可额外调用：
+```bash
+python3 -c "from tools.calculate import load_sentiment; print(load_sentiment('{SYMBOL}', 24))"
+```
+至少提取并记录以下社媒字段：
+- `weighted_score`
+- `sentiment_label`
+- `total`（样本量）
+- `top_summaries`（关键观点，可简写 1-2 条）
+
+如果情绪或价位数据返回空/报错，记录失败原因；情绪数据为空时不必立刻 SKIP，可以继续做新闻和量化分析，但必须在 Phase 5 明确标注 `Social Score: unavailable` 并降低置信度。
 
 **然后根据具体情况选择工具组合**，以下是典型场景参考（不是强制规则）：
 
@@ -248,7 +259,7 @@ python3 tools/position_sizing.py {SYMBOL} {账户权益} {入场价} {止损价}
 
 --- {SYMBOL} ---
 News Direction: {LONG/SHORT}
-Sentiment Score: {score}
+Social Score: {weighted_score:+.2f} ({sentiment_label}, n={total})
 Current Price: {price}
 Price Timestamp ET: {YYYY-MM-DD HH:MM ET}
 Price Interval: {1m/5m/15m/30m/60m/1d}
@@ -280,44 +291,56 @@ Position Sizing (if ACTIONABLE):
 ACTIONABLE:
   {SYMBOL} | {LONG/SHORT} | Confidence: {HIGH/MED/LOW}
     Catalyst: {one-line summary of unpriced event}
+    Social Score: {weighted_score:+.2f} ({sentiment_label}, n={total}) / unavailable
     Data As Of ET: {YYYY-MM-DD HH:MM ET}
     Price Source: sentiment.db.stock_price_bars ({interval})
     Entry: ${price} | Stop: ${price} | Target: ${price}
     News Score: {strong/moderate/weak}
     Quant Score: {entry_signal score}/100
+    Why It Is Actionable: {how social + news + quant combine into one trade thesis}
     Risk: {key risk factor}
 
 WATCH (not actionable yet):
   {SYMBOL} | {reason to watch, not act}
+    Social Score: {weighted_score:+.2f} ({sentiment_label}, n={total}) / unavailable
+    News Score: {strong/moderate/weak}
+    Quant Score: {entry_signal score}/100
     Data As Of ET: {YYYY-MM-DD HH:MM ET}
     Price Source: sentiment.db.stock_price_bars ({interval})
 
 SKIP:
   {SYMBOL} | {reason to skip}
+    Social Score: {weighted_score:+.2f} ({sentiment_label}, n={total}) / unavailable
+    News Score: {strong/moderate/weak / none}
+    Quant Score: {entry_signal score}/100 / unavailable
     Data As Of ET: {YYYY-MM-DD HH:MM ET if available}
     Price Source: {sentiment.db.stock_price_bars ({interval}) / none}
 ```
 
 **判断标准**：
 
-严格沿用 `tools/entry_signal.py` 的方向阈值：
-- `score >= 40` → LONG
-- `score <= -40` → SHORT
-- `-39 ~ +39` → WAIT
+Phase 5 由 LLM 做综合分析，不要机械套用 `entry_signal` 阈值表。
 
-entry_signal 评分为 ±100。正值=做多信号，负值=做空信号；`abs(score)` 仅用于区分 HIGH / MED 强度，不单独决定是否可交易。
+`entry_signal` 的作用：
+- 它是 **量化侧的重要锚点**，用来衡量技术面方向、结构完整度、入场/止损/止盈质量
+- 它 **不是唯一裁决器**，不能压过所有社媒和新闻信息
+- 当它与新闻/社媒冲突时，重点不是“谁覆盖谁”，而是说明冲突来自哪里、哪个维度更可信、为什么
 
-**方向一致性**：新闻催化剂方向（利多/利空）必须与 entry_signal 方向一致；如果 entry_signal 为 `WAIT`，即使新闻很强，也先归为 `WATCH`。
+综合判断时，至少同时回答下面 4 个问题：
+1. **社媒是否在放大/提前反映这个事件？** 看 `Social Score`、样本量、关键观点是否一致
+2. **新闻催化剂是否真实、具体、且未被定价？** 看事件时间、影响路径、主流媒体确认强度
+3. **量化结构是否支持立刻交易，而不是只支持“方向上可能对”？** 看 `Quant Score`、市场状态、入场/止损是否合理
+4. **三者冲突时，哪个维度最应该主导？** 必须写清理由，不能只给结论
 
-| 条件 | 判定 |
-|------|------|
-| 未定价催化剂 + `score >= 65` + 新闻利多 | ACTIONABLE (HIGH, LONG) |
-| 未定价催化剂 + `40 <= score <= 64` + 新闻利多 | ACTIONABLE (MED, LONG) |
-| 未定价催化剂 + `score <= -65` + 新闻利空 | ACTIONABLE (HIGH, SHORT) |
-| 未定价催化剂 + `-64 <= score <= -40` + 新闻利空 | ACTIONABLE (MED, SHORT) |
-| 未定价催化剂 + `-39 <= score <= 39` | WATCH |
-| 未定价催化剂 + 方向矛盾（新闻利多但评分为负，或新闻利空但评分为正） | WATCH |
-| 已定价 或 无明确催化剂 | SKIP |
+建议的综合裁决思路：
+- **社媒 + 新闻 + 量化同向**：优先考虑 `ACTIONABLE`
+- **新闻很强，但量化滞后或冲突**：可以给 `WATCH`，也可以给低置信度 `ACTIONABLE`，但必须解释为什么新闻权重更高，以及怎么控制 gap risk
+- **量化很强，但新闻弱/已定价，社媒也不支持**：更倾向 `WATCH` 或 `SKIP`，避免把纯技术反弹误判成事件交易
+- **社媒很热但新闻证据弱**：通常不应直接 `ACTIONABLE`，除非你明确说明这是“情绪驱动交易”而不是“新闻驱动交易”
+- **任一关键维度缺失**：允许继续输出结论，但必须显式标注缺口并下调置信度
+
+如果最终结论与 `entry_signal` 方向不同，或在 `entry_signal = WAIT` 时仍给出 `ACTIONABLE`，必须额外写一句：
+- `Override Reason: {why LLM overrode the raw quant direction}`
 
 完成后关闭浏览器：
 ```bash
