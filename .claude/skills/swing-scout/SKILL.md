@@ -19,7 +19,7 @@ description: 超短线股票机会扫描工具。当用户想进行超短线交�
 
 ### Phase 0: Preflight 检查
 
-在开始之前，确认环境就绪：
+在开始之前，做最小必要检查：
 
 ```bash
 # 确保 analysis_log 目录存在
@@ -33,6 +33,8 @@ mkdir -p analysis_log
 ```
 
 确定 `LAST_CLOSE`（上一个交易日收盘时间），后续所有 Phase 以此为基准判断事件是否"未定价"。
+
+Preflight 不做复杂恢复或额外探测。只要发现工具、配置、数据源、网络等问题，记录到报告里并结束；不要把环境问题误写成交易结论。
 
 **提前退出条件**：
 - 如果社交媒体抓取返回空结果，记录原因并结束
@@ -60,7 +62,13 @@ python3 cli/social_media_cli.py --minutes 1440
 ```
 === SWING SCOUT REPORT ===
 Date: {date}
-Generated: {timestamp}
+Generated Local: {YYYY-MM-DD HH:MM TZ}
+Generated ET: {YYYY-MM-DD HH:MM ET}
+LAST_CLOSE_ET: {YYYY-MM-DD HH:MM ET}
+LAST_CLOSE_UNIX: {unix_ts}
+Social Data Source: cli/social_media_cli.py --minutes 1440
+News Verification Source: browser-use manual article verification
+Price Data Source: sentiment.db.stock_price_bars
 
 == Phase 1: Social Media Scan ==
 
@@ -99,11 +107,17 @@ Search Plan:
 == Phase 2: Breaking News Verification ==
 
 [UNPRICED] Event description
-  Source: {url}
-  Time: {when it happened}
+  Source URL: {url}
+  Source Type: {article/liveblog/company-post/search-snippet}
+  Published At ET: {YYYY-MM-DD HH:MM ET if known, else unknown}
+  Event Time ET: {YYYY-MM-DD HH:MM ET if known, else estimated window}
   Impact: {symbol} {direction} - {why}
 
 [ALREADY PRICED] Event description
+  Source URL: {url}
+  Source Type: {article/liveblog/company-post/search-snippet}
+  Published At ET: {YYYY-MM-DD HH:MM ET if known, else unknown}
+  Event Time ET: {YYYY-MM-DD HH:MM ET if known, else estimated window}
   Reason: happened during market hours / already reflected in Friday close
 
 Final Watch List (unpriced events only):
@@ -140,6 +154,10 @@ python3 cli/stock_data.py minute {SYMBOLS} --minutes 60
 Synced: {SYMBOL1}, {SYMBOL2}, ...
 Failed: {SYMBOL3} (reason: ...)
 Benchmark: {QQQ/SPY/XLE}
+Price DB Table: stock_price_bars
+
+Snapshot Metadata:
+  SYMBOL | LATEST_BAR_ET | INTERVAL | DATA_SOURCE
 ```
 
 ### Phase 4: 量化分析与仓位计算
@@ -232,6 +250,9 @@ python3 tools/position_sizing.py {SYMBOL} {账户权益} {入场价} {止损价}
 News Direction: {LONG/SHORT}
 Sentiment Score: {score}
 Current Price: {price}
+Price Timestamp ET: {YYYY-MM-DD HH:MM ET}
+Price Interval: {1m/5m/15m/30m/60m/1d}
+Price Source: sentiment.db.stock_price_bars
 
 Tool Selection Rationale: {why these tools were chosen}
 
@@ -240,7 +261,7 @@ Technical Signals:
   - ...
 
 Entry Signal Score: {score}/100
-Direction: {LONG/SHORT/NEUTRAL}
+Direction: {LONG/SHORT/WAIT}
 Entry: ${price} | Stop: ${price} | Target: ${price}
 
 Position Sizing (if ACTIONABLE):
@@ -259,6 +280,8 @@ Position Sizing (if ACTIONABLE):
 ACTIONABLE:
   {SYMBOL} | {LONG/SHORT} | Confidence: {HIGH/MED/LOW}
     Catalyst: {one-line summary of unpriced event}
+    Data As Of ET: {YYYY-MM-DD HH:MM ET}
+    Price Source: sentiment.db.stock_price_bars ({interval})
     Entry: ${price} | Stop: ${price} | Target: ${price}
     News Score: {strong/moderate/weak}
     Quant Score: {entry_signal score}/100
@@ -266,23 +289,34 @@ ACTIONABLE:
 
 WATCH (not actionable yet):
   {SYMBOL} | {reason to watch, not act}
+    Data As Of ET: {YYYY-MM-DD HH:MM ET}
+    Price Source: sentiment.db.stock_price_bars ({interval})
 
 SKIP:
   {SYMBOL} | {reason to skip}
+    Data As Of ET: {YYYY-MM-DD HH:MM ET if available}
+    Price Source: {sentiment.db.stock_price_bars ({interval}) / none}
 ```
 
 **判断标准**：
 
-entry_signal 评分为 ±100，正值=做多信号，负值=做空信号。用 `abs(score)` 判断信号强度，用评分正负号判断方向。
+严格沿用 `tools/entry_signal.py` 的方向阈值：
+- `score >= 40` → LONG
+- `score <= -40` → SHORT
+- `-39 ~ +39` → WAIT
 
-**方向一致性**：新闻催化剂方向（利多/利空）与 entry_signal 评分正负号一致。
+entry_signal 评分为 ±100。正值=做多信号，负值=做空信号；`abs(score)` 仅用于区分 HIGH / MED 强度，不单独决定是否可交易。
+
+**方向一致性**：新闻催化剂方向（利多/利空）必须与 entry_signal 方向一致；如果 entry_signal 为 `WAIT`，即使新闻很强，也先归为 `WATCH`。
 
 | 条件 | 判定 |
 |------|------|
-| 未定价催化剂 + abs(score) ≥ 40 + 方向一致 | ACTIONABLE (HIGH) |
-| 未定价催化剂 + abs(score) 20~39 + 方向一致 | ACTIONABLE (MED) |
-| 未定价催化剂 + abs(score) < 20 | WATCH |
-| 未定价催化剂 + 方向矛盾（新闻利多但评分为负，或反之） | WATCH |
+| 未定价催化剂 + `score >= 65` + 新闻利多 | ACTIONABLE (HIGH, LONG) |
+| 未定价催化剂 + `40 <= score <= 64` + 新闻利多 | ACTIONABLE (MED, LONG) |
+| 未定价催化剂 + `score <= -65` + 新闻利空 | ACTIONABLE (HIGH, SHORT) |
+| 未定价催化剂 + `-64 <= score <= -40` + 新闻利空 | ACTIONABLE (MED, SHORT) |
+| 未定价催化剂 + `-39 <= score <= 39` | WATCH |
+| 未定价催化剂 + 方向矛盾（新闻利多但评分为负，或新闻利空但评分为正） | WATCH |
 | 已定价 或 无明确催化剂 | SKIP |
 
 完成后关闭浏览器：
@@ -308,3 +342,6 @@ browser-use close
 - 不要过度分析已经被市场充分消化的旧闻
 - 量化分析结果如果与新闻方向矛盾，降低置信度而不是忽略矛盾
 - 每个 Phase 完成后立即写入文件，不要等全部完成再写
+- 所有时间统一优先写 ET（美东时间）；如果原文只有相对时间，明确标注 `estimated`
+- 所有价格都要带 `Price Timestamp ET`、`Price Interval`、`Price Source`
+- 除非数据源明确标注盘前/盘后，否则不要主观写 `pre-market` / `after-hours`，统一写成“latest DB bar”
