@@ -11,7 +11,8 @@ description: 超短线股票机会扫描工具。当用户想进行超短线交�
 
 - **只关注超短线**：自上一个交易日收盘（美东 4pm）以来的突发新闻，不做长线推演
 - **只关注未定价事件**：盘后/周末/节假日发生的、下一个交易日开盘才会反映的事件
-- **新闻先行，量化验证**：先确定"为什么会动"，再用技术面确认"怎么动"
+- **社媒发现，新闻验证，量化确认**：先用社媒找到线索，再用新闻确认催化剂，最后用量化决定交易结构
+- **最终结论由 LLM 综合裁决**：Phase 5 必须显式综合社媒、新闻、量化三类结果，不能只机械跟随单一分数
 - **只看纳指100和标普500成分股**：Phase 1 提取的 symbol 必须属于这两个指数，非成分股标记为 SKIP
 - **结果全部落盘**：所有分析写入 `analysis_log/{YYYYMMDD_HHMM}.txt`
 
@@ -19,7 +20,7 @@ description: 超短线股票机会扫描工具。当用户想进行超短线交�
 
 ### Phase 0: Preflight 检查
 
-在开始之前，确认环境就绪：
+在开始之前，做最小必要检查：
 
 ```bash
 # 确保 analysis_log 目录存在
@@ -33,6 +34,8 @@ mkdir -p analysis_log
 ```
 
 确定 `LAST_CLOSE`（上一个交易日收盘时间），后续所有 Phase 以此为基准判断事件是否"未定价"。
+
+Preflight 不做复杂恢复或额外探测。只要发现工具、配置、数据源、网络等问题，记录到报告里并结束；不要把环境问题误写成交易结论。
 
 **提前退出条件**：
 - 如果社交媒体抓取返回空结果，记录原因并结束
@@ -60,7 +63,13 @@ python3 cli/social_media_cli.py --minutes 1440
 ```
 === SWING SCOUT REPORT ===
 Date: {date}
-Generated: {timestamp}
+Generated Local: {YYYY-MM-DD HH:MM TZ}
+Generated ET: {YYYY-MM-DD HH:MM ET}
+LAST_CLOSE_ET: {YYYY-MM-DD HH:MM ET}
+LAST_CLOSE_UNIX: {unix_ts}
+Social Data Source: cli/social_media_cli.py --minutes 1440
+News Verification Source: browser-use manual article verification
+Price Data Source: sentiment.db.stock_price_bars
 
 == Phase 1: Social Media Scan ==
 
@@ -99,11 +108,17 @@ Search Plan:
 == Phase 2: Breaking News Verification ==
 
 [UNPRICED] Event description
-  Source: {url}
-  Time: {when it happened}
+  Source URL: {url}
+  Source Type: {article/liveblog/company-post/search-snippet}
+  Published At ET: {YYYY-MM-DD HH:MM ET if known, else unknown}
+  Event Time ET: {YYYY-MM-DD HH:MM ET if known, else estimated window}
   Impact: {symbol} {direction} - {why}
 
 [ALREADY PRICED] Event description
+  Source URL: {url}
+  Source Type: {article/liveblog/company-post/search-snippet}
+  Published At ET: {YYYY-MM-DD HH:MM ET if known, else unknown}
+  Event Time ET: {YYYY-MM-DD HH:MM ET if known, else estimated window}
   Reason: happened during market hours / already reflected in Friday close
 
 Final Watch List (unpriced events only):
@@ -140,6 +155,10 @@ python3 cli/stock_data.py minute {SYMBOLS} --minutes 60
 Synced: {SYMBOL1}, {SYMBOL2}, ...
 Failed: {SYMBOL3} (reason: ...)
 Benchmark: {QQQ/SPY/XLE}
+Price DB Table: stock_price_bars
+
+Snapshot Metadata:
+  SYMBOL | LATEST_BAR_ET | INTERVAL | DATA_SOURCE
 ```
 
 ### Phase 4: 量化分析与仓位计算
@@ -184,7 +203,17 @@ python3 tools/position_sizing.py {SYMBOL} {账户权益} {入场价} {止损价}
 ```bash
 python3 -c "from tools.calculate import format_sentiment_report, get_concrete_price; print(format_sentiment_report('{SYMBOL}')); print(get_concrete_price('{SYMBOL}'))"
 ```
-如果情绪或价位数据返回空/报错，记录失败原因，该 symbol 跳过后续量化分析，在 Phase 5 标记为 SKIP。
+如需在 Phase 4 / Phase 5 写入明确的社媒分数，可额外调用：
+```bash
+python3 -c "from tools.calculate import load_sentiment; print(load_sentiment('{SYMBOL}', 24))"
+```
+至少提取并记录以下社媒字段：
+- `weighted_score`
+- `sentiment_label`
+- `total`（样本量）
+- `top_summaries`（关键观点，可简写 1-2 条）
+
+如果情绪或价位数据返回空/报错，记录失败原因；情绪数据为空时不必立刻 SKIP，可以继续做新闻和量化分析，但必须在 Phase 5 明确标注 `Social Score: unavailable` 并降低置信度。
 
 **然后根据具体情况选择工具组合**，以下是典型场景参考（不是强制规则）：
 
@@ -230,8 +259,11 @@ python3 tools/position_sizing.py {SYMBOL} {账户权益} {入场价} {止损价}
 
 --- {SYMBOL} ---
 News Direction: {LONG/SHORT}
-Sentiment Score: {score}
+Social Score: {weighted_score:+.2f} ({sentiment_label}, n={total})
 Current Price: {price}
+Price Timestamp ET: {YYYY-MM-DD HH:MM ET}
+Price Interval: {1m/5m/15m/30m/60m/1d}
+Price Source: sentiment.db.stock_price_bars
 
 Tool Selection Rationale: {why these tools were chosen}
 
@@ -240,7 +272,7 @@ Technical Signals:
   - ...
 
 Entry Signal Score: {score}/100
-Direction: {LONG/SHORT/NEUTRAL}
+Direction: {LONG/SHORT/WAIT}
 Entry: ${price} | Stop: ${price} | Target: ${price}
 
 Position Sizing (if ACTIONABLE):
@@ -259,31 +291,56 @@ Position Sizing (if ACTIONABLE):
 ACTIONABLE:
   {SYMBOL} | {LONG/SHORT} | Confidence: {HIGH/MED/LOW}
     Catalyst: {one-line summary of unpriced event}
+    Social Score: {weighted_score:+.2f} ({sentiment_label}, n={total}) / unavailable
+    Data As Of ET: {YYYY-MM-DD HH:MM ET}
+    Price Source: sentiment.db.stock_price_bars ({interval})
     Entry: ${price} | Stop: ${price} | Target: ${price}
     News Score: {strong/moderate/weak}
     Quant Score: {entry_signal score}/100
+    Why It Is Actionable: {how social + news + quant combine into one trade thesis}
     Risk: {key risk factor}
 
 WATCH (not actionable yet):
   {SYMBOL} | {reason to watch, not act}
+    Social Score: {weighted_score:+.2f} ({sentiment_label}, n={total}) / unavailable
+    News Score: {strong/moderate/weak}
+    Quant Score: {entry_signal score}/100
+    Data As Of ET: {YYYY-MM-DD HH:MM ET}
+    Price Source: sentiment.db.stock_price_bars ({interval})
 
 SKIP:
   {SYMBOL} | {reason to skip}
+    Social Score: {weighted_score:+.2f} ({sentiment_label}, n={total}) / unavailable
+    News Score: {strong/moderate/weak / none}
+    Quant Score: {entry_signal score}/100 / unavailable
+    Data As Of ET: {YYYY-MM-DD HH:MM ET if available}
+    Price Source: {sentiment.db.stock_price_bars ({interval}) / none}
 ```
 
 **判断标准**：
 
-entry_signal 评分为 ±100，正值=做多信号，负值=做空信号。用 `abs(score)` 判断信号强度，用评分正负号判断方向。
+Phase 5 由 LLM 做综合分析，不要机械套用 `entry_signal` 阈值表。
 
-**方向一致性**：新闻催化剂方向（利多/利空）与 entry_signal 评分正负号一致。
+`entry_signal` 的作用：
+- 它是 **量化侧的重要锚点**，用来衡量技术面方向、结构完整度、入场/止损/止盈质量
+- 它 **不是唯一裁决器**，不能压过所有社媒和新闻信息
+- 当它与新闻/社媒冲突时，重点不是“谁覆盖谁”，而是说明冲突来自哪里、哪个维度更可信、为什么
 
-| 条件 | 判定 |
-|------|------|
-| 未定价催化剂 + abs(score) ≥ 40 + 方向一致 | ACTIONABLE (HIGH) |
-| 未定价催化剂 + abs(score) 20~39 + 方向一致 | ACTIONABLE (MED) |
-| 未定价催化剂 + abs(score) < 20 | WATCH |
-| 未定价催化剂 + 方向矛盾（新闻利多但评分为负，或反之） | WATCH |
-| 已定价 或 无明确催化剂 | SKIP |
+综合判断时，至少同时回答下面 4 个问题：
+1. **社媒是否在放大/提前反映这个事件？** 看 `Social Score`、样本量、关键观点是否一致
+2. **新闻催化剂是否真实、具体、且未被定价？** 看事件时间、影响路径、主流媒体确认强度
+3. **量化结构是否支持立刻交易，而不是只支持“方向上可能对”？** 看 `Quant Score`、市场状态、入场/止损是否合理
+4. **三者冲突时，哪个维度最应该主导？** 必须写清理由，不能只给结论
+
+建议的综合裁决思路：
+- **社媒 + 新闻 + 量化同向**：优先考虑 `ACTIONABLE`
+- **新闻很强，但量化滞后或冲突**：可以给 `WATCH`，也可以给低置信度 `ACTIONABLE`，但必须解释为什么新闻权重更高，以及怎么控制 gap risk
+- **量化很强，但新闻弱/已定价，社媒也不支持**：更倾向 `WATCH` 或 `SKIP`，避免把纯技术反弹误判成事件交易
+- **社媒很热但新闻证据弱**：通常不应直接 `ACTIONABLE`，除非你明确说明这是“情绪驱动交易”而不是“新闻驱动交易”
+- **任一关键维度缺失**：允许继续输出结论，但必须显式标注缺口并下调置信度
+
+如果最终结论与 `entry_signal` 方向不同，或在 `entry_signal = WAIT` 时仍给出 `ACTIONABLE`，必须额外写一句：
+- `Override Reason: {why LLM overrode the raw quant direction}`
 
 完成后关闭浏览器：
 ```bash
@@ -308,3 +365,6 @@ browser-use close
 - 不要过度分析已经被市场充分消化的旧闻
 - 量化分析结果如果与新闻方向矛盾，降低置信度而不是忽略矛盾
 - 每个 Phase 完成后立即写入文件，不要等全部完成再写
+- 所有时间统一优先写 ET（美东时间）；如果原文只有相对时间，明确标注 `estimated`
+- 所有价格都要带 `Price Timestamp ET`、`Price Interval`、`Price Source`
+- 除非数据源明确标注盘前/盘后，否则不要主观写 `pre-market` / `after-hours`，统一写成“latest DB bar”

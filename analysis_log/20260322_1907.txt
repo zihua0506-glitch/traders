@@ -1,0 +1,339 @@
+=== SWING SCOUT REPORT ===
+Date: 2026-03-22
+Generated Local: 2026-03-22 19:07 PDT
+Generated ET: 2026-03-22 22:07 EDT
+LAST_CLOSE_ET: 2026-03-20 16:00 ET
+LAST_CLOSE_UNIX: 1742508000
+Social Data Source: cli/social_media_cli.py --minutes 1440
+News Verification Source: browser-use manual article verification
+Price Data Source: sentiment.db.stock_price_bars
+
+== Phase 1: Social Media Scan ==
+
+[PLTR] Elon Musk quote-tweeted (9.5M views) about Palantir AI + Claude used in US military operations against Iran, Pentagon making it permanent across all branches | BULLISH
+  - Source: @shiri_shh tweet, amplified by @elonmusk with "Anthropic" comment
+  - Massive viral reach suggests retail attention spike on Monday
+
+[XOM/CVX/OXY] Strait of Hormuz closure fears dominating WSB and r/stocks | BULLISH for energy
+  - WSB posts "Straits Closed!" (12,981 score) and "Straits open" (7,079 score) - massive engagement
+  - Multiple r/stocks posts about oil spiking, US-Iran escalation
+  - Trump's 48-hour threat to Iran mentioned repeatedly
+
+[LMT/RTX/NOC/GD] US-Iran war escalation driving defense sector sentiment | BULLISH
+  - r/investing thread on war-resilient industries (58 score, 47 comments)
+  - Multiple threads discussing prolonged conflict scenario
+  - Trump mentioned threatening Iran power plants, Iran threatening Gulf energy/water retaliation
+
+[TSLA] SpaceX Terafab event in Austin, SpaceX $1.25T valuation news | NEUTRAL (SpaceX private, indirect TSLA link weak)
+  - Cybertruck at Terafab event, but not a direct TSLA catalyst
+  - SpaceXAI + Tesla Terafab project mentioned but details unclear
+
+[GENERAL BEARISH SENTIMENT] Market-wide fear elevated
+  - Multiple "how cooked am I" posts, Roth IRA losses
+  - Fear about Cuba invasion threat, private credit as "2008 with different middleman"
+  - China pledging balanced trade (potential slight positive)
+
+SKIP: MSFT (WSB loss porn, no new catalyst), AMZN/COST (valuation discussion, no breaking news)
+
+Search Plan:
+  1. "Strait of Hormuz closure Iran March 2026" - verify if straits actually closed or just threatened
+  2. "Trump 48 hour ultimatum Iran" - verify the specific threat and timeline
+  3. "Iran threatens Gulf energy water retaliation" - verify Iran's counter-threats
+  4. "Palantir Pentagon AI military contract 2026" - verify if this is new news or old
+  5. "US Iran military operation March 2026" - latest status of conflict
+  6. "oil price WTI Brent March 22 2026" - check oil price movement over weekend
+  7. "defense stocks war Iran LMT RTX" - any specific contract/spending news
+
+== Phase 2: Breaking News Verification ==
+
+[UNPRICED] Trump issues 48-hour ultimatum to Iran to reopen Strait of Hormuz (Saturday night March 21)
+  Source URL: https://www.politico.com/news/2026/03/22/iran-strait-of-hormuz-trump
+  Source Type: article (Politico/AP)
+  Published At ET: 2026-03-22 20:11 ET
+  Event Time ET: 2026-03-21 late evening ET (Saturday)
+  Impact: XOM/CVX/OXY LONG - 48-hour deadline expires ~Monday evening, creates max uncertainty for Monday open
+  Impact: SPY/QQQ SHORT - broad market fear, VIX futures +11.31%
+
+[UNPRICED] Iran threatens to "completely close" Strait of Hormuz if US attacks power plants
+  Source URL: https://www.politico.com/news/2026/03/22/iran-strait-of-hormuz-trump
+  Source Type: article (Politico/AP, confirmed by Reuters, CNN, Guardian, Time)
+  Published At ET: 2026-03-22 (Sunday, multiple sources throughout day)
+  Event Time ET: 2026-03-22 (Sunday, IRGC statement)
+  Impact: XOM/CVX/OXY LONG - Hormuz already effectively closed, complete closure threat escalates oil premium
+  Impact: Brent settled $112.11 (highest since July 2022), WTI ~$96-98
+
+[UNPRICED] Iran threatens to destroy Gulf energy/desalination infrastructure + "entities financing US military"
+  Source URL: https://www.politico.com/news/2026/03/22/iran-strait-of-hormuz-trump
+  Source Type: article (Iran parliament speaker Qalibaf statement on X)
+  Published At ET: 2026-03-22 (Sunday)
+  Event Time ET: 2026-03-22 (Sunday)
+  Impact: Broad market BEARISH - threat to Gulf infrastructure = potential oil supply catastrophe
+  Impact: Energy stocks LONG as supply disruption hedge
+
+[UNPRICED] Iran missiles strike near Israeli nuclear sites (Dimona/Arad), 175+ wounded
+  Source URL: https://www.politico.com/news/2026/03/22/iran-strait-of-hormuz-trump
+  Source Type: article (AP)
+  Published At ET: 2026-03-22 20:11 ET
+  Event Time ET: 2026-03-21 late Saturday (Israeli time)
+  Impact: LMT/RTX/NOC LONG - further escalation = more defense spending
+  Impact: Broad market BEARISH - nuclear facility proximity raises stakes
+
+[UNPRICED] Pentagon formally designates Palantir Maven AI as Program of Record
+  Source URL: https://www.reuters.com/technology/pentagon-adopt-palantir-ai-core-us-military-system/
+  Source Type: article (Reuters Exclusive, confirmed by Motley Fool, Yahoo Finance, Benzinga, MLQ.ai)
+  Published At ET: 2026-03-20 (Friday, exact time unknown - possibly after hours)
+  Event Time ET: 2026-03-20 (Friday)
+  Impact: PLTR LONG - Maven elevated from prototype to official program of record, long-term stable funding
+  Note: Partially priced Friday if news broke during market hours, but significant weekend amplification
+    - Elon Musk quote tweet (9.5M views) amplifying Palantir military AI role
+    - Motley Fool "bombshell" coverage Saturday
+    - Reddit r/technews trending Sunday
+    - "Already primary AI operating system for US military, thousands of strikes against Iran"
+
+[ALREADY PRICED] Defense stocks (LMT/RTX/NOC) surged 3-6% on Friday March 20
+  Source URL: https://themiddleeastinsider.com/us-defense-stocks-surge
+  Source Type: article
+  Published At ET: 2026-03-22 (weekend recap)
+  Event Time ET: 2026-03-20 market hours
+  Reason: Friday surge reflected war escalation known at that time
+  Note: BUT weekend 48-hour ultimatum is NEW escalation not reflected in Friday close
+
+[ALREADY PRICED] Oil surge to $112 Brent / $96 WTI (Friday close)
+  Source URL: https://www.cnbc.com/2026/03/22/oil-prices-rise
+  Source Type: article
+  Published At ET: 2026-03-22 (weekend)
+  Event Time ET: 2026-03-20 (Friday close)
+  Reason: Brent +8.8% last week, settled at highest since July 2022
+  Note: BUT 48-hour ultimatum + complete closure threat = potential further upside
+
+Weekend Market Futures Snapshot (as of ~22:00 ET Sunday):
+  S&P Futures: 6,548.50 (-0.16%)
+  Nasdaq Futures: 24,039.50 (-0.26%)
+  Dow Futures: 45,904.00 (+0.02%)
+  VIX: 26.78 (+11.31%)
+  Gold: 4,386.70 (-4.11%) - unusual drop, possible margin call liquidation
+  Bitcoin: 67,962.33 (-1.52%)
+  Brent: ~$112.11
+  WTI: ~$96.32
+
+Final Watch List (unpriced events only):
+  XOM  | LONG  | Hormuz 48-hour ultimatum + complete closure threat | NEWS_EVIDENCE: strong
+  CVX  | LONG  | Hormuz 48-hour ultimatum + complete closure threat | NEWS_EVIDENCE: strong
+  OXY  | LONG  | Hormuz 48-hour ultimatum + complete closure threat | NEWS_EVIDENCE: strong
+  PLTR | LONG  | Pentagon Maven Program of Record + viral amplification | NEWS_EVIDENCE: strong
+  LMT  | LONG  | Weekend escalation (missiles near nuclear sites, 48hr ultimatum) | NEWS_EVIDENCE: moderate
+  RTX  | LONG  | Weekend escalation (purest munitions play) | NEWS_EVIDENCE: moderate
+  NOC  | LONG  | Weekend escalation (led S&P 500 Friday +6%) | NEWS_EVIDENCE: moderate
+
+== Phase 3: Data Sync ==
+
+Synced: XOM, CVX, OXY, PLTR, LMT, RTX, NOC
+Failed: none
+Benchmark: QQQ, SPY, XLE
+Price DB Table: stock_price_bars
+
+Snapshot Metadata (Friday March 20 close):
+  XOM  | $159.67 | 1d | stock_price_bars
+  CVX  | $201.73 | 1d | stock_price_bars
+  OXY  | $60.71  | 1d | stock_price_bars
+  PLTR | $150.68 | 1d | stock_price_bars
+  LMT  | $627.43 | 1d | stock_price_bars
+  RTX  | $198.16 | 1d | stock_price_bars
+  NOC  | $706.95 | 1d | stock_price_bars
+  QQQ  | $582.06 | 1d | stock_price_bars
+  SPY  | $648.57 | 1d | stock_price_bars
+  XLE  | $59.31  | 1d | stock_price_bars
+
+10-Day Price Context:
+  XOM:  $150.44 -> $159.67 (+6.1%, steady uptrend)
+  CVX:  $189.44 -> $201.73 (+6.5%, steady uptrend)
+  OXY:  $54.76  -> $60.71  (+10.9%, strong uptrend)
+  PLTR: $156.43 -> $150.68 (-3.7%, range-bound/slight decline)
+  LMT:  $664.15 -> $627.43 (-5.5%, declining from highs)
+  RTX:  $208.23 -> $198.16 (-4.8%, declining from highs)
+  NOC:  $747.34 -> $706.95 (-5.4%, declining from highs)
+  QQQ:  $607.76 -> $582.06 (-4.2%, downtrend)
+  SPY:  $676.42 -> $648.57 (-4.1%, downtrend)
+  XLE:  $56.32  -> $59.31  (+5.3%, steady uptrend)
+
+== Phase 4: Quantitative Analysis ==
+
+--- XOM ---
+News Direction: LONG
+Sentiment Score: no sentiment data
+Current Price: $159.89
+Price Timestamp ET: 2026-03-20 16:00 ET (Friday close)
+Price Interval: 1m (latest DB bar)
+Price Source: sentiment.db.stock_price_bars
+
+Tool Selection Rationale: entry_signal only (score too low for further analysis)
+
+Entry Signal Score: +0/100
+Direction: WAIT
+Signals: SuperTrend bullish, SAR bearish, CMF -1.0 (strong outflow), VWAP below, RSI neutral 53.6
+Note: Despite strong news catalyst, technical signals are completely mixed. CMF at -1.0 indicates heavy institutional selling on Friday.
+
+--- OXY ---
+News Direction: LONG
+Sentiment Score: no sentiment data
+Current Price: $60.79
+Price Timestamp ET: 2026-03-20 16:00 ET (Friday close)
+Price Interval: 1m (latest DB bar)
+Price Source: sentiment.db.stock_price_bars
+
+Tool Selection Rationale: entry_signal + smart_money + volatility_risk (strongest oil leverage play)
+
+Technical Signals:
+  - entry_signal: +28/100 (5 bullish, 1 bearish, WAIT)
+  - smart_money: CMF +0.74 (institutional accumulation), MACD accelerating +52.69%, MFI oversold 0.0
+  - votality_risk: Squeeze OFF (momentum released upward), CHOP 72.7 (strong oscillation), ATR normal-low
+
+Entry Signal Score: +28/100
+Direction: WAIT
+Note: CMF shows strong institutional accumulation vs SPY (OXY +0.74 vs SPY -0.84). MACD momentum accelerating. But CHOP at 72.7 = strong oscillating market, entry_signal still WAIT. Closest energy name to actionable.
+
+--- CVX ---
+News Direction: LONG
+Sentiment Score: no sentiment data
+Current Price: $202.00
+Price Timestamp ET: 2026-03-20 16:00 ET (Friday close)
+Price Interval: 1m (latest DB bar)
+Price Source: sentiment.db.stock_price_bars
+
+Tool Selection Rationale: entry_signal only (score too low)
+
+Entry Signal Score: -2/100
+Direction: WAIT
+Signals: SuperTrend bullish, SAR bearish, CMF -1.0 (strong outflow), Williams%R 0.0 (extreme overbought)
+Note: Williams%R at 0.0 = extreme overbought. CMF -1.0 = heavy selling. Despite bullish news, technicals are bearish.
+
+--- PLTR ---
+News Direction: LONG
+Sentiment Score: no sentiment data
+Current Price: $151.96
+Price Timestamp ET: 2026-03-20 16:00 ET (Friday close)
+Price Interval: 1m (latest DB bar)
+Price Source: sentiment.db.stock_price_bars
+
+Tool Selection Rationale: entry_signal + trend_structure (Pentagon Maven catalyst, need trend confirmation)
+
+Technical Signals:
+  - entry_signal: +35/100 (5 bullish, 1 bearish, WAIT)
+  - trend_structure: Ichimoku above Kijun (+0.04%), TK cross bullish, SuperTrend bullish, SAR bullish
+  - Trend alignment: micro bullish, macro data insufficient
+
+Entry Signal Score: +35/100
+Direction: WAIT (5 points below LONG threshold)
+Note: Highest score among all candidates. All trend indicators aligned bullish. MACD is the only bearish signal (bearish arrangement above zero). Very close to actionable - if Monday gap up on Maven news + Elon viral tweet, could cross +40 threshold intraday.
+
+--- LMT ---
+News Direction: LONG
+Sentiment Score: no sentiment data
+Current Price: $625.31
+Price Timestamp ET: 2026-03-20 16:00 ET (Friday close)
+Price Interval: 1m (latest DB bar)
+Price Source: sentiment.db.stock_price_bars
+
+Tool Selection Rationale: entry_signal only (defense sector check)
+
+Entry Signal Score: -2/100
+Direction: WAIT
+Signals: SuperTrend/SAR bullish, but MACD death cross (-12), CMF -1.0, VWAP below, Williams%R -86.8 (near oversold)
+Note: MACD death cross is a strong bearish signal. Despite war escalation news, LMT has been declining -5.5% over 10 days. Institutions appear to be distributing.
+
+--- RTX ---
+News Direction: LONG
+Sentiment Score: no sentiment data
+Current Price: $198.11
+Price Timestamp ET: 2026-03-20 16:00 ET (Friday close)
+Price Interval: 1m (latest DB bar)
+Price Source: sentiment.db.stock_price_bars
+
+Tool Selection Rationale: entry_signal only (defense sector check)
+
+Entry Signal Score: +4/100
+Direction: WAIT
+Signals: SuperTrend bullish, SAR bearish, Ichimoku below Kijun, MACD bearish below zero, CMF +1.0 (accumulation), Williams%R -93.5 (oversold)
+Note: Mixed signals. Williams%R deeply oversold could mean bounce potential, but MACD bearish below zero axis. Direction unclear.
+
+--- NOC ---
+News Direction: LONG
+Sentiment Score: no sentiment data
+Current Price: $707.11
+Price Timestamp ET: 2026-03-20 16:00 ET (Friday close)
+Price Interval: 1m (latest DB bar)
+Price Source: sentiment.db.stock_price_bars
+
+Tool Selection Rationale: entry_signal only (defense sector check)
+
+Entry Signal Score: +28/100
+Direction: WAIT
+Market State: Trend market (32.2) - 1.2x multiplier applied
+Signals: SuperTrend/SAR/Ichimoku all bullish, MACD slightly bearish, CMF neutral
+Note: In trend market state with 1.2x multiplier, but still below +40 threshold. Best positioned among defense names.
+
+== Phase 5: Final Verdict ==
+
+ACTIONABLE:
+  (none)
+
+WATCH (not actionable yet):
+  PLTR | entry_signal +35, 5 points below LONG threshold
+    Catalyst: Pentagon formally designates Maven AI as Program of Record + Elon viral amplification (9.5M views)
+    Data As Of ET: 2026-03-20 16:00 ET
+    Price Source: sentiment.db.stock_price_bars (1m)
+    Current: $151.96 | 10d range: $149.09 - $158.44
+    News Score: strong
+    Quant Score: +35/100
+    Why WATCH not ACTIONABLE: entry_signal WAIT (+35 < +40 threshold). All trend indicators bullish but MACD bearish. Maven news may be partially priced from Friday. Monitor Monday pre-market for gap above $156 (10d high) which would confirm breakout.
+
+  OXY | entry_signal +28, strong institutional accumulation
+    Catalyst: Hormuz 48-hour ultimatum + complete closure threat, highest oil leverage among energy majors
+    Data As Of ET: 2026-03-20 16:00 ET
+    Price Source: sentiment.db.stock_price_bars (1m)
+    Current: $60.79 | 10d range: $52.05 - $62.95
+    News Score: strong
+    Quant Score: +28/100
+    Why WATCH not ACTIONABLE: entry_signal WAIT (+28 < +40). CMF shows strong accumulation (+0.74 vs SPY -0.84) and MACD accelerating (+52.69%), but CHOP at 72.7 = oscillating market. If oil gaps up Monday on ultimatum deadline pressure, could become actionable. Watch $62.95 (24h high) as breakout level.
+
+  NOC | entry_signal +28, best defense name in trend market
+    Catalyst: Weekend escalation (Iran missiles near nuclear sites, 48hr ultimatum)
+    Data As Of ET: 2026-03-20 16:00 ET
+    Price Source: sentiment.db.stock_price_bars (1m)
+    Current: $707.11 | 10d range: $700.70 - $765.58
+    News Score: moderate
+    Quant Score: +28/100
+    Why WATCH not ACTIONABLE: entry_signal WAIT. Despite being in trend market state (1.2x multiplier), score still below threshold. NOC has been declining from $747 to $707 over 10 days despite war backdrop. Wait for trend reversal confirmation.
+
+SKIP:
+  XOM | entry_signal +0, completely mixed signals despite strong news
+    Data As Of ET: 2026-03-20 16:00 ET
+    Price Source: sentiment.db.stock_price_bars (1m)
+    Reason: CMF -1.0 (heavy institutional outflow) contradicts bullish oil catalyst. Zero score = no conviction.
+
+  CVX | entry_signal -2, overbought + institutional selling
+    Data As Of ET: 2026-03-20 16:00 ET
+    Price Source: sentiment.db.stock_price_bars (1m)
+    Reason: Williams%R at 0.0 (extreme overbought) + CMF -1.0. Technicals actively bearish despite bullish news.
+
+  LMT | entry_signal -2, MACD death cross, declining -5.5% in 10d
+    Data As Of ET: 2026-03-20 16:00 ET
+    Price Source: sentiment.db.stock_price_bars (1m)
+    Reason: Institutions distributing. MACD death cross signal. News direction (bullish) contradicts technical direction (bearish).
+
+  RTX | entry_signal +4, mixed signals, direction unclear
+    Data As Of ET: 2026-03-20 16:00 ET
+    Price Source: sentiment.db.stock_price_bars (1m)
+    Reason: Williams%R oversold (-93.5) could trigger bounce but MACD bearish below zero. No clear directional conviction.
+
+=== SUMMARY ===
+Despite extremely strong geopolitical catalysts (Trump 48-hour Hormuz ultimatum, Iran complete closure threat, Pentagon Maven AI formalization), ALL entry_signal scores fall in the WAIT zone (-40 to +40). Per scoring rules, no symbols qualify as ACTIONABLE.
+
+Key takeaway: The market is in a high-uncertainty regime (VIX 26.78, +11.31%). Energy stocks show institutional accumulation (OXY CMF +0.74) but oscillating market structure. Defense stocks are paradoxically declining despite ongoing war escalation, suggesting "buy the rumor, sell the news" dynamics or valuation fatigue.
+
+Monday watch priorities:
+1. PLTR - closest to LONG threshold (+35). Gap above $156 = potential breakout
+2. OXY - strongest institutional signal. Oil gap up = potential catalyst
+3. NOC - best defense name. Watch for trend reversal above $720
+
+48-hour ultimatum deadline (~Monday evening ET) creates binary event risk. Consider waiting for clarity before entering positions.
