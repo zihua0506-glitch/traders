@@ -1,0 +1,314 @@
+=== SWING SCOUT REPORT ===
+Date: 2026-03-22 (Sunday)
+Generated Local: 2026-03-22 21:38 PDT
+Generated ET: 2026-03-23 00:38 ET
+LAST_CLOSE_ET: 2026-03-20 16:00 ET
+LAST_CLOSE_UNIX: 1774065600
+Social Data Source: cli/social_media_cli.py --minutes 1440
+News Verification Source: browser-use manual article verification
+Price Data Source: sentiment.db.stock_price_bars
+
+== Phase 1: Social Media Scan ==
+
+[XOM/CVX/COP] Iran-Strait of Hormuz escalation: Trump 48-hour threat, Iran retaliates threatening Gulf energy/water | BEARISH market / BULLISH oil & energy
+  - WSB: "Nikkei sinks over 5% after Trump threatens Iran over Strait of Hormuz" (339 upvotes)
+  - WSB: "Monday: Straits Closed!" (13534 upvotes) vs "Straits open" (7466 upvotes) — massive debate
+  - r/stocks: "Stock Selloff Extends as Iran Conflict Escalates" (306 upvotes)
+  - r/stocks: "Trump threaten to hit Iran power plant. Iran threaten back that they will hit Gulf Energy and Water"
+  - r/investing: "Which industries tend to be war-resilient?" (70 upvotes)
+  - Overall sentiment: extreme fear, oil long / equity short bias
+
+[SNPS] Elliott activist takes multibillion-dollar stake in Synopsys | BULLISH
+  - WSB: "Activist Elliott takes multibillion-dollar stake in Synopsys" (16 upvotes, low engagement)
+  - Sentiment: cautiously bullish, activist catalysts usually unlock value
+
+[TSLA] TERAFAB super-factory announcement | MIXED
+  - Elon RT about TERAFAB scale comparison with Giga Texas
+  - "That will be one hell of a building!" (3M views, 14K likes)
+  - Long-term story, unlikely to move stock on Monday open
+
+[PLTR] Palantir AI + Claude used for military operations against Iran | BULLISH
+  - Elon quote-tweeted "Anthropic" — viral (12M views)
+  - "Palantir is now the core AI brain of the entire U.S. military"
+  - Need to verify if this is new news or old
+
+[LMT/RTX/NOC/GD] Defense stocks — war escalation beneficiaries | BULLISH
+  - Implied by Iran war entering 4th week, no de-escalation
+  - r/investing: war-resilient industries discussion
+
+Search Plan:
+  1. "Trump Iran Strait of Hormuz 48 hours threat" — verify timing and specifics
+  2. "Nikkei crash March 22 2026" — confirm magnitude and cause
+  3. "Elliott Synopsys stake 2026" — verify deal details and timing
+  4. "Palantir military AI Iran operation" — verify if new or old news
+  5. "Trump Cuba invasion" — verify if this is a new development
+  6. "Oil price Brent WTI March 22 2026" — check current oil levels
+  7. "Iran retaliation Gulf energy water" — verify Iran's counterthreats
+
+== Phase 2: Breaking News Verification ==
+
+[UNPRICED] Trump issues 48-hour ultimatum: reopen Strait of Hormuz or U.S. will "obliterate" Iran's power plants
+  Source URL: https://www.aljazeera.com/news/2026/3/22/trump-issues-48-hour-hormuz-strait-ultimatum-threatens-iran-power-plants
+  Source Type: article (multiple major outlets confirmed: Al Jazeera, Axios, CNBC, NBC, Bloomberg, WashPost)
+  Published At ET: 2026-03-21 ~18:44 ET (Truth Social post at 23:44 GMT Saturday)
+  Event Time ET: 2026-03-21 ~18:44 ET
+  Impact: XOM/CVX/COP LONG — oil stays elevated ($106-109 Brent, $93-100 WTI); Hormuz remains shut 3rd week; 48hr deadline = Monday ~6:44 PM ET
+  Impact: LMT/RTX/NOC LONG — war escalation, no de-escalation signs, 4th week
+  Impact: SPY/QQQ SHORT — broad risk-off, Nikkei futures -3.3%, KOSPI -5%+
+  NSA Waltz confirmed on Fox News: "He will start by attacking and destroying one of Iran's largest power plants"
+
+[UNPRICED] Iran counter-threatens: will strike ALL Gulf energy, water desalination, IT infrastructure if power plants hit
+  Source URL: https://www.aljazeera.com/news/2026/3/22/iran-says-will-hit-regions-energy-sites-if-us-israel-target-power-plants
+  Source Type: article (Al Jazeera, US News, CBS, CNBC confirmed)
+  Published At ET: 2026-03-22 (Sunday)
+  Event Time ET: 2026-03-22 (Sunday)
+  Impact: XOM/CVX/COP LONG — Iran IRGC says Hormuz "completely closed and will not be opened until destroyed power plants rebuilt"
+  Impact: Oil LONG — 20% of world oil transits Hormuz; gas at $3.94/gal and rising
+  Iran named 5 specific targets: Saudi SAMREF refinery, Jubail petrochem, UAE Al Hosn gasfield, Qatar Ras Laffan refinery, Mesaieed petrochem
+
+[UNPRICED] Elliott Investment Management takes multibillion-dollar stake in Synopsys (SNPS)
+  Source URL: https://money.usnews.com/investing/news/articles/2026-03-22/activist-elliott-takes-multibillion-dollar-stake-in-synopsys-wsj-reports
+  Source Type: article (WSJ original, confirmed by Bloomberg, Reuters, Investing.com)
+  Published At ET: 2026-03-22 (Saturday, after market close)
+  Event Time ET: 2026-03-22 (reported Saturday)
+  Impact: SNPS LONG — Elliott sees room to boost sales and improve margins to match Cadence (CDNS)
+  Elliott Managing Partner Jesse Cohn: "Synopsys is essential to the global chip industry"
+  SNPS valued at $80B+; Nvidia invested $2B in SNPS in Dec for expanded AI chip design partnership
+  Activist catalysts historically produce 5-15% initial pop
+
+[UNPRICED] Pentagon formalizes Palantir's Maven AI system as military "program of record"
+  Source URL: https://ca.finance.yahoo.com/news/pentagon-formalizes-palantir-maven-ai-023210259.html
+  Source Type: article (Yahoo Finance, Reuters, NBC, Democracy Now)
+  Published At ET: 2026-03-21 ~02:32 UTC (estimated late Friday / early Saturday)
+  Event Time ET: 2026-03-20/21 (Friday night / Saturday)
+  Impact: PLTR LONG — "program of record" = stable long-term funding vs ad-hoc bridge contracts
+  Deputy Defense Secretary Feinberg announced policy change; Maven to be incorporated across ALL branches
+  Caveat: Underlying Palantir-Iran war story has been running for weeks; the formalization is the new catalyst
+  Risk: Anthropic lawsuit and civilian casualty investigation create headline risk
+
+[ALREADY PRICED] Trump pressure on Cuba — ongoing since January 2026
+  Source URL: https://www.aljazeera.com/news/2026/3/22/emerging-from-latest-blackout-cuba-says-ready-for-any-potential-us-attack
+  Source Type: article (Al Jazeera, CNN, Bloomberg, CSMonitor)
+  Published At ET: various, ongoing
+  Event Time ET: ongoing since Jan 2026
+  Reason: Cuba pressure has been building for months; no new discrete weekend catalyst. "Taking Cuba" rhetoric from March 16. Already reflected in market.
+
+[ALREADY PRICED] Iran war general context — entering 4th week since Feb 28
+  Source URL: https://www.cnn.com/world/live-news/iran-war-us-israel-trump-03-22-26
+  Source Type: liveblog
+  Published At ET: ongoing
+  Event Time ET: war started 2026-02-28
+  Reason: War has been ongoing; oil spike and market selloff already partially priced. However, the 48-hour ultimatum and Iran's counter-threats are NEW escalations.
+
+Oil Price Snapshot (as of March 22):
+  Brent: ~$106-109/bbl
+  WTI: ~$93-100/bbl (high $113.41 in past month)
+  US gas: $3.94/gal (up $1+ in one month)
+
+Global Market Pre-Reaction:
+  Nikkei 225: -3.3% to ~51,055 (lowest since Jan 2026, -10.76% over 4 weeks)
+  KOSPI: -5%+ with circuit breaker triggered
+
+Final Watch List (unpriced events only):
+  SNPS | LONG | Elliott activist multibillion-dollar stake | NEWS_EVIDENCE: strong
+  XOM  | LONG | Hormuz escalation + Iran Gulf threats + oil $106+ | NEWS_EVIDENCE: strong
+  LMT  | LONG | War escalation, 48hr ultimatum, no de-escalation | NEWS_EVIDENCE: strong
+  PLTR | LONG | Pentagon Maven "program of record" formalization | NEWS_EVIDENCE: moderate
+
+== Phase 3: Data Sync ==
+
+Synced: SNPS, XOM, LMT, PLTR, QQQ, SPY
+Failed: none
+Benchmark: QQQ, SPY
+Price DB Table: stock_price_bars
+
+Snapshot Metadata (Friday March 20 Close):
+  SNPS | $420.32 | 1d | stock_price_bars
+  XOM  | $159.67 | 1d | stock_price_bars
+  LMT  | $627.43 | 1d | stock_price_bars
+  PLTR | $150.68 | 1d | stock_price_bars
+  QQQ  | $582.06 | 1d | stock_price_bars
+  SPY  | $648.57 | 1d | stock_price_bars
+
+10-Day Price Context:
+  SNPS: $437.22 → $420.32 (-3.9%), range $410-441, Friday -1.9% (selloff on volume 4.1M vs avg 1.5M)
+  XOM:  $150.44 → $159.67 (+6.1%), steady uptrend on Iran war/oil, range $148-162
+  LMT:  $664.15 → $627.43 (-5.5%), declining despite war (profit-taking?), range $622-676
+  PLTR: $156.43 → $150.68 (-3.7%), choppy range $148-158, sold off Friday -3.2%
+  QQQ:  $607.76 → $582.06 (-4.2%), broad tech selloff
+  SPY:  $676.42 → $648.57 (-4.1%), broad market selloff
+
+== Phase 4: Quantitative Analysis ==
+
+--- SNPS ---
+News Direction: LONG (Elliott activist multibillion-dollar stake)
+Social Score: unavailable (n=0, symbol not directly in social DB)
+Social Context: WSB mentioned Elliott stake (16 upvotes, low engagement)
+Current Price: $424.32 (after-hours via DB)
+Price Timestamp ET: 2026-03-20 (latest DB bar)
+Price Interval: 1m
+Price Source: sentiment.db.stock_price_bars
+
+Tool Selection Rationale: Elliott activist = event-driven trade. Smart money tools to check institutional positioning; entry_signal for baseline.
+
+Technical Signals:
+  - entry_signal: +22/100, WAIT, low confidence, trending market (33.9)
+  - smart_money (MACD): Bullish alignment above zero, momentum accelerating +249%
+  - smart_money (MFI): Severely oversold (0.0) — extreme reading, potential reversal
+  - smart_money (CMF): Strong distribution (-1.00), institutional selling
+  - VWAP: Price above VWAP (+0.69%)
+
+Entry Signal Score: +22/100
+Direction: WAIT (quant), LONG (news catalyst override)
+Entry: $420.32 (Friday close) | Stop: $410.00 (March 13 low) | Target: $445.00 (pre-selloff highs)
+R/R: ~2.4:1
+
+Note: entry_signal WAIT is based on pre-news technical structure. Elliott activist stakes historically produce 5-15% gap-ups on announcement. The MFI severely oversold + MACD acceleration suggests the selling exhaustion is near. The gap-up risk is the main concern (chasing).
+
+--- XOM ---
+News Direction: LONG (Hormuz 48hr ultimatum, oil $106+ Brent)
+Social Score: unavailable (n=0)
+Social Context: Massive WSB/r/stocks discussion on oil/Hormuz (13K+ upvotes on Hormuz closure posts)
+Current Price: $159.89 (after-hours via DB)
+Price Timestamp ET: 2026-03-20 (latest DB bar)
+Price Interval: 1m
+Price Source: sentiment.db.stock_price_bars
+
+Tool Selection Rationale: Oil play in high-volatility war environment. Trend structure for direction, volatility risk for stop sizing.
+
+Technical Signals:
+  - entry_signal: +0/100, WAIT, low confidence, choppy market (80.9)
+  - trend_structure: SuperTrend bullish, SAR downtrend, Ichimoku mixed (price above Kijun but TK bearish)
+  - votality_risk: Squeeze ON (8 of 10 bars compressed), momentum UP and accelerating
+  - votality_risk (CHOP): 80.9 = strong consolidation, NOT trending yet
+  - votality_risk (ATR): Normal-high, stop distance ±$0.41 (2×ATR) — too tight for overnight gap risk
+  - Keltner: Inside channel at 61.2%, leaning upper band
+
+Entry Signal Score: +0/100
+Direction: WAIT (quant), LONG (news catalyst override)
+Entry: $159.67 (Friday close) | Stop: $154.80 (March 19 low) | Target: $170.00 (oil escalation scenario)
+R/R: ~2.1:1
+
+Note: CHOP 80.9 signals choppy market, but Squeeze ON with upward momentum = potential breakout. The 48-hour ultimatum creates a binary event: if Hormuz stays closed, oil spikes further → XOM benefits. If surprise de-escalation, gap down. XOM already up 6.1% in 10 days on war premium — upside may be more limited vs fresh entrants.
+
+--- LMT ---
+News Direction: LONG (war escalation, 48hr ultimatum, no de-escalation)
+Social Score: unavailable (n=0)
+Social Context: Defense stocks implied beneficiaries in multiple Reddit threads
+Current Price: $625.31 (after-hours via DB)
+Price Timestamp ET: 2026-03-20 (latest DB bar)
+Price Interval: 1m
+Price Source: sentiment.db.stock_price_bars
+
+Tool Selection Rationale: Defense stock declining despite war — check if oversold with market_psychology.
+
+Technical Signals:
+  - entry_signal: -2/100, WAIT, low confidence, transitional market (58.6)
+  - market_psychology: MULTI-INDICATOR OVERSOLD CONVERGENCE
+    - Williams%R: Extremely oversold (-86.8), accelerating down (-51.5%)
+    - CCI: Oversold (-113.2), accelerating down
+    - RSI: Bearish (44.1), accelerating down
+  - LMT vs SPY: LMT relatively stronger (RSI 44 vs SPY 34, CCI -113 vs SPY -277)
+  - MACD: Death cross (bearish)
+  - SuperTrend + SAR: Conflicting (SuperTrend bullish, SAR... mixed)
+
+Entry Signal Score: -2/100
+Direction: WAIT (quant)
+Entry: N/A | Stop: N/A | Target: N/A
+R/R: N/A
+
+Note: LMT is paradoxically DECLINING during a war. Down 5.5% in 10 days while the Iran conflict escalates. This suggests profit-taking after prior run-up or sector rotation out of defense. Multi-indicator oversold convergence suggests a bounce is possible, but the trend is against the trade. The 48-hour ultimatum is an escalation, but LMT has not been responding to war escalation recently. High risk of "buy the news, sell the fact" pattern.
+
+--- PLTR ---
+News Direction: LONG (Pentagon Maven "program of record" formalization)
+Social Score: unavailable (n=0)
+Social Context: Elon Musk "Anthropic" tweet (12M views) → viral discussion of Palantir military AI
+Current Price: $151.96 (after-hours via DB)
+Price Timestamp ET: 2026-03-20 (latest DB bar)
+Price Interval: 1m
+Price Source: sentiment.db.stock_price_bars
+
+Tool Selection Rationale: Pentagon formalization is incremental catalyst. Entry signal to check baseline direction.
+
+Technical Signals:
+  - entry_signal: +35/100, WAIT (but highest of all 4), low confidence, choppy (67.1)
+  - CMF: +0.25 (only symbol with positive money flow — institutional accumulation)
+  - SuperTrend + SAR: Both bullish
+  - Ichimoku: Price above Kijun (bullish)
+  - MACD: Bearish alignment but above zero (weakening momentum)
+
+Entry Signal Score: +35/100
+Direction: WAIT (quant), LONG (news catalyst)
+Entry: $150.68 (Friday close) | Stop: $148.58 (March 13 low) | Target: $158.44 (March 9 high)
+R/R: ~3.7:1
+
+Note: PLTR has the strongest quant signal (+35) and is the only symbol with positive CMF (institutional buying). Pentagon Maven formalization provides stable long-term funding. However, risk factors include Anthropic lawsuit, civilian casualty investigation, and general market risk-off environment (Nikkei -3.3%, KOSPI -5%). High beta stock in a risk-off week.
+
+Position Sizing: Account equity not provided, position sizing skipped for all symbols.
+
+== Phase 5: Final Verdict ==
+
+LLM Comprehensive Assessment:
+
+1. Social media amplification: Reddit/WSB is overwhelmingly focused on Iran/Hormuz escalation (13K+ upvotes).
+   SNPS has minimal social traction (16 upvotes). PLTR has viral Elon tweet exposure (12M views).
+   Social is amplifying the macro fear trade, not individual stock catalysts.
+
+2. News catalyst verification: Trump 48hr Hormuz ultimatum is REAL, SPECIFIC, and UNPRICED (posted Saturday 6:44PM ET).
+   Elliott/SNPS stake is REAL, SPECIFIC, and UNPRICED (reported Saturday). Both verified by multiple major outlets.
+   PLTR Maven formalization is REAL but INCREMENTAL — underlying story has been running for weeks.
+
+3. Quant structure: All 4 symbols show WAIT. This is expected — the quant tools analyze pre-weekend technicals.
+   They cannot account for Sunday-night news catalysts that will cause Monday gap opens.
+   In event-driven trading, the quant structure is subordinate to the catalyst.
+
+4. Conflict resolution: News strongly dominates quant in this session because:
+   a) The catalysts occurred AFTER market close and are not yet priced
+   b) The quant WAIT signals reflect a pre-catalyst technical picture
+   c) Event-driven gaps override intraday technical structure
+   However, the broad risk-off environment (Nikkei -3.3%, KOSPI -5%) creates headwinds for ALL longs.
+
+ACTIONABLE:
+  SNPS | LONG | Confidence: MED
+    Catalyst: Elliott Investment Management takes multibillion-dollar stake; pushes for margin improvement to match Cadence
+    Social Score: unavailable (n=0)
+    Data As Of ET: 2026-03-20 16:00 ET
+    Price Source: sentiment.db.stock_price_bars (1m)
+    Entry: $420-425 (gap-up open zone) | Stop: $410.00 (March 13 low) | Target: $445.00
+    News Score: strong (WSJ original, Bloomberg/Reuters confirmed, Jesse Cohn on record)
+    Quant Score: +22/100
+    Why It Is Actionable: This is a pure event-driven trade. Elliott activist stakes in $80B+ companies are among the most reliable gap-up catalysts in the market. Historical precedent: 5-15% initial pop. The quant WAIT is irrelevant here — this trade is about the unpriced catalyst, not technical structure. MFI severely oversold suggests selling exhaustion, making the catalyst timing ideal. Risk-off macro headwind is the main concern, but SNPS is an idiosyncratic story that should decouple from broad market.
+    Risk: Gap-up too large to enter (>8% gap = chase risk). Broad market selloff dragging SNPS down despite catalyst. Elliott engagement may take months to materialize margin improvement.
+    Override Reason: LLM overrides entry_signal WAIT because the Elliott activist catalyst is a discrete, unpriced event that will reprice the stock at Monday open regardless of technical indicators.
+
+  XOM | LONG | Confidence: LOW
+    Catalyst: Trump 48-hour Hormuz ultimatum (deadline Monday ~6:44PM ET); Iran counter-threatens to destroy Gulf energy/water; Hormuz "completely closed"
+    Social Score: unavailable (n=0)
+    Data As Of ET: 2026-03-20 16:00 ET
+    Price Source: sentiment.db.stock_price_bars (1m)
+    Entry: $159.67 (Friday close) | Stop: $154.80 (March 19 low) | Target: $170.00
+    News Score: strong (every major outlet covering; NSA Waltz confirmed on Fox News)
+    Quant Score: +0/100
+    Why It Is Actionable: Squeeze ON with upward momentum suggests XOM is coiled for a breakout. The 48-hour deadline creates a binary event on Monday. If no resolution → oil spikes → XOM benefits. However, confidence is LOW because: (a) XOM already up 6.1% in 10 days — much of the oil premium is priced, (b) quant shows CHOP 80.9 = choppy, not trending, (c) surprise de-escalation = sharp reversal. This is more a momentum continuation bet than a fresh catalyst trade.
+    Risk: Oil already near $110 Brent — limited upside vs downside if de-escalation. XOM has been choppy at these levels. Binary event risk: 48hr deadline outcome is unpredictable.
+    Override Reason: LLM overrides entry_signal WAIT because the 48-hour deadline creates a specific, time-bound catalyst with asymmetric oil upside if Hormuz remains closed. But low confidence due to already-elevated prices.
+
+WATCH (not actionable yet):
+  PLTR | Watch for Monday morning reaction to Maven "program of record" news
+    Social Score: unavailable (n=0)
+    News Score: moderate (Pentagon formalization is real but incremental; underlying story weeks old)
+    Quant Score: +35/100
+    Data As Of ET: 2026-03-20 16:00 ET
+    Price Source: sentiment.db.stock_price_bars (1m)
+    Rationale: PLTR has the best quant structure (+35, positive CMF, SuperTrend+SAR bullish) but the news catalyst is moderate, not strong. The Maven formalization was partially known; the Elon tweet viral moment may create short-term attention but doesn't change fundamentals. In a risk-off week (Nikkei -3.3%, KOSPI -5%), high-beta PLTR is vulnerable to broad market selloff. Best to watch the Monday open — if PLTR gaps up and holds above $153 (March 19 high), it becomes actionable for a swing to $158.
+
+SKIP:
+  LMT | Defense stock declining despite active war — trend against thesis
+    Social Score: unavailable (n=0)
+    News Score: strong (war escalation is real)
+    Quant Score: -2/100
+    Data As Of ET: 2026-03-20 16:00 ET
+    Price Source: sentiment.db.stock_price_bars (1m)
+    Rationale: LMT is the most paradoxical chart in the watch list — down 5.5% in 10 days during an active war. This screams "buy the rumor, sell the fact." Multi-indicator oversold convergence would normally signal a bounce, but the persistent selling on heavy volume (6.4M Friday vs 1.3M avg) suggests institutional distribution, not just retail profit-taking. The MACD death cross confirms the bearish momentum. When a defense stock can't rally during a war, the signal is clear: something structural is wrong (likely valuation/rotation). Do not fight the trend.
+
+=== END OF REPORT ===
