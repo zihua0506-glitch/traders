@@ -1,0 +1,277 @@
+=== SWING SCOUT REPORT ===
+Date: 2026-03-23
+Generated Local: 2026-03-23 08:50 CST
+Generated ET: 2026-03-23 09:50 ET
+LAST_CLOSE_ET: 2026-03-20 16:00 ET (Friday)
+LAST_CLOSE_UNIX: 1742504400
+Social Data Source: cli/social_media_cli.py --minutes 1440
+News Verification Source: WebSearch + WebFetch article verification
+Price Data Source: sentiment.db.stock_price_bars
+
+== Phase 1: Social Media Scan ==
+
+[TSLA] TERAFAB mega-factory announcement by Elon Musk over the weekend | BULLISH
+  - Elon presented TERAFAB: integrated chip design, memory, packaging facility for Tesla/SpaceX/xAI
+  - Multiple viral tweets (43K+ likes on Elon's post, 14.5M views)
+  - Described as "civilization-level" project, full vertical integration play
+  - Wall Street hasn't priced this yet (weekend announcement)
+
+[SNPS] Elliott takes multibillion-dollar activist stake | BULLISH
+  - Reported on WSB Saturday: "Activist Elliott takes multibillion-dollar stake in Synopsys"
+  - Elliott is known for pushing operational changes and unlocking value
+  - S&P 500 + Nasdaq 100 constituent
+
+[UBER] $1.25B Rivian robotaxi deal completed | BULLISH
+  - Rivian CEO interview: deal for up to 50,000 R2 robotaxis
+  - Positions UBER in autonomous mobility future
+  - S&P 500 constituent
+
+[MU] Earnings beat 35% but stock tanked 5% | MIXED/BEARISH SHORT-TERM
+  - Revenue $23.9B vs $19.7B expected, EPS $12.20 vs $9.00 consensus
+  - "Buy the rumor, sell the news" pattern
+  - HBM4 capacity for 2026 confirmed sold out
+  - Likely already priced (earnings during market hours Friday)
+
+[BROAD MARKET] Iran-US ceasefire talks + Iran denial | VOLATILE
+  - Trump postponed strikes on Iranian power plants for 5 days
+  - S&P futures jumped 2%+ on the news
+  - BUT Iran denied: "We reject all negotiations - US has failed and Hormuz will remain closed"
+  - Oil tumbled then potentially reversed
+  - Nikkei sank 5%+ on Hormuz threats before recovery
+  - Treasury yields whipsawed
+  - Affects: XOM, CVX (bearish if peace), LMT/RTX/NOC (bearish if peace)
+  - India-Pakistan ceasefire also a wildcard
+
+Search Plan:
+  1. TSLA TERAFAB announcement: exact timing, details, cost estimates, market reaction
+  2. SNPS Elliott stake: when reported, size, intentions, timing vs market hours
+  3. Iran-US timeline: exact timing of Trump Truth Social post, Iran denial, current status
+  4. UBER/Rivian robotaxi deal: when announced, terms
+  5. Oil price current level and weekend movement (WTI/Brent)
+  6. Asia/Europe market reaction Monday morning (Nikkei, Hang Seng)
+
+== Phase 2: Breaking News Verification ==
+
+[UNPRICED] Tesla TERAFAB $20-25B chip mega-factory announced
+  Source URL: https://electrek.co/2026/03/22/tesla-spacex-terafab-chip-factory-ai-desperation/
+  Source Type: article (Electrek, Engadget, Tom's Hardware, Fortune confirmed)
+  Published At ET: 2026-03-22 (event on 2026-03-21 Saturday)
+  Event Time ET: 2026-03-21 (Saturday) - livestream at Seaholm Power Plant, Austin TX
+  Impact: TSLA LONG - Massive vertical integration play: $20-25B facility for chip design,
+    lithography, fabrication, memory, packaging under one roof. Targeting 2nm process,
+    100K wafer starts/month initially scaling to 1M. Two chip types: AI4 inference chips
+    for Tesla vehicles/Optimus robots, and D3 chips for orbital AI satellites.
+    80% of compute for space-based applications. Skepticism exists: cost not yet in
+    Tesla's 2026 CapEx plan, no firm construction timeline. Musk history of overpromising.
+
+[UNPRICED] Elliott Investment Management takes multibillion-dollar activist stake in Synopsys
+  Source URL: https://ca.finance.yahoo.com/news/elliott-investment-management-takes-multibillion-130200232.html
+  Source Type: article (WSJ broke story, confirmed by Reuters, Bloomberg, CNBC)
+  Published At ET: 2026-03-22/23 (weekend)
+  Event Time ET: 2026-03-22 (Saturday/Sunday reporting window)
+  Impact: SNPS LONG - Elliott argues Synopsys has room to boost sales and improve margins
+    to match rival Cadence Design Systems. Focus on IP segment (16% of revenue) margin fix.
+    Jesse Cohn (Managing Partner) says SNPS "essential to global chip industry" and
+    "uniquely positioned to benefit" from AI-driven chip complexity. Shares up 3% premarket.
+    Company valued at $80B+. Nvidia invested $2B in SNPS in Dec 2025.
+
+[PARTIALLY PRICED] Trump postpones Iran strikes for 5 days, Iran denies negotiations
+  Source URL: https://www.aljazeera.com/news/2026/3/23/trump-postpones-military-strikes-on-iranian-power-plants
+  Source Type: article (Al Jazeera, CNN, Bloomberg, CNBC, Axios confirmed)
+  Published At ET: 2026-03-23 morning (Monday)
+  Event Time ET: 2026-03-23 pre-market Monday
+  Impact: BROAD MARKET - Trump posted on Truth Social Monday morning claiming "productive
+    conversations" with Iran on "complete and total resolution of hostilities."
+    Postponed strikes on power plants for 5 days. Claims Iran agreed to: no nuclear weapons,
+    no uranium enrichment, hand over stockpiles, reopen Strait of Hormuz.
+    CRITICAL: Iran DENIES any talks. Iranian state TV: "US president backs down following
+    Iran's firm warning." Turkey mediating.
+    Market reaction (Monday session): Dow +975 (+2.1%), S&P +2%, Nasdaq +2.3%.
+    Oil crashed: Brent -10.1% to $100.87, WTI -9.5% to $88.90.
+    WARNING: Iran denial creates high reversal risk. This "ceasefire" may be one-sided.
+
+[ALREADY PRICED] Uber-Rivian $1.25B robotaxi deal
+  Source URL: https://www.cnbc.com/2026/03/19/uber-rivian-robotaxi.html
+  Source Type: article (CNBC, TechCrunch, Bloomberg)
+  Published At ET: 2026-03-19 (Wednesday, during market hours)
+  Event Time ET: 2026-03-19 Wednesday
+  Reason: Announced during Wednesday's trading session. UBER fell 1%, RIVN +3%.
+    Market had full session to digest. Deal: up to 50K R2 robotaxis in 25 cities
+    across US/Canada/Europe, first cities SF and Miami in 2028.
+
+[ALREADY PRICED] MU earnings beat + sell-off
+  Source URL: social media (r/stocks)
+  Source Type: earnings report
+  Published At ET: 2026-03-20 Friday (during market hours)
+  Event Time ET: 2026-03-20 Friday
+  Reason: Earnings released during Friday session. Stock already dropped 5%.
+    "Buy the rumor, sell the news" fully played out.
+
+Final Watch List (unpriced events only):
+  TSLA | LONG | TERAFAB $20-25B chip mega-factory (Saturday announcement) | NEWS_EVIDENCE: strong
+  SNPS | LONG | Elliott multibillion-dollar activist stake (weekend report) | NEWS_EVIDENCE: strong
+
+== Phase 3: Data Sync ==
+
+Synced: TSLA, SNPS, QQQ
+Failed: (none)
+Benchmark: QQQ
+
+Snapshot Metadata:
+  TSLA | 2026-03-23 ~10:14 ET | 1m + 1d | stock_price_bars
+  SNPS | 2026-03-23 ~10:15 ET | 1m + 1d | stock_price_bars
+  QQQ  | 2026-03-23 ~10:15 ET | 1m + 1d | stock_price_bars
+
+Price Snapshot (latest bars):
+  TSLA: $379.49 (Fri close $367.96, gap +3.1%) | Day range $356.82 - $385.33
+  SNPS: $434.13 (Fri close $420.32, gap +3.3%) | Day range $420.40 - $442.00
+  QQQ:  $588.40 (Fri close $582.06, gap +1.1%) | broad market Iran-relief rally
+
+== Phase 4: Quantitative Analysis ==
+
+--- TSLA ---
+News Direction: LONG
+Social Score: unavailable (no sentiment data in DB for TSLA past 24h)
+Current Price: $379.49
+Price Timestamp ET: 2026-03-23 ~10:14 ET
+Price Interval: 1m
+Price Source: sentiment.db.stock_price_bars
+
+Tool Selection Rationale: Bullish news catalyst (TERAFAB) + need to confirm oversold bounce
+  setup → trend_structure + smart_money + market_psychology + votality_risk + entry_signal
+
+Technical Signals:
+  - trend_structure: Mixed. SuperTrend bullish, but Ichimoku below kijun (-0.57%),
+    SAR bearish, TK bearish crossover. Micro trend bullish, macro data insufficient.
+  - smart_money: MFI 28.4 with BOTTOM DIVERGENCE (bullish), but CMF -0.30 (distribution),
+    MACD bearish below zero. Price below VWAP ($380.76). TSLA stronger than QQQ on MFI/CMF.
+  - market_psychology: SEVERELY OVERSOLD across all indicators.
+    RSI 18.1 (extreme) with bottom divergence. CCI -157.5 (oversold) with bottom divergence.
+    Williams%R -97.8 (extreme). Multiple indicator oversold convergence → high rebound alert.
+  - votality_risk: Keltner lower band broken (weak breakout). Squeeze OFF (energy released).
+    CHOP 47.9 (weak trend/transition). ATR normal-low, stop distance ±$1.17 (2×ATR).
+
+Entry Signal Score: +1/100
+Direction: WAIT
+Entry: $379.49 (current) | Stop: $364.46 (Friday low, structure) | Target: $395-400 (pre-selloff)
+  ATR-based stop alternative: $378.32 (current - 2×ATR, tighter)
+
+--- SNPS ---
+News Direction: LONG
+Social Score: unavailable (no sentiment data in DB for SNPS past 24h)
+Current Price: $434.13
+Price Timestamp ET: 2026-03-23 ~10:15 ET
+Price Interval: 1m
+Price Source: sentiment.db.stock_price_bars
+
+Tool Selection Rationale: Strong activist catalyst (Elliott) + oversold conditions
+  → trend_structure + smart_money + market_psychology + votality_risk + entry_signal
+
+Technical Signals:
+  - trend_structure: Mixed. SuperTrend bullish, but Ichimoku below kijun (-0.75%),
+    SAR bearish, TK bearish. Consistent with TSLA: micro bullish, macro insufficient.
+  - smart_money: MFI 32.1 with BOTTOM DIVERGENCE (bullish), CMF -0.27 (distribution but
+    improving — CMF trend rising strongly). MACD death cross, below zero. Price below
+    VWAP ($437.49). SNPS stronger than QQQ on both MFI (+15.5) and CMF (+0.09).
+  - market_psychology: EXTREMELY OVERSOLD.
+    Williams%R -100 (absolute floor). CCI -227.7 (extreme). RSI 25.4 (oversold) with
+    bottom divergence. Multi-indicator oversold convergence → high rebound alert.
+  - votality_risk: Keltner lower band broken. Squeeze OFF. CHOP 48.4 (transition,
+    but CHOP accelerating down = trending energy building). ATR stop: ±$1.51 (2×ATR).
+
+Entry Signal Score: -5/100
+Direction: WAIT
+Entry: $434.13 (current) | Stop: $419.00 (Friday low area, structure) | Target: $450-460
+  ATR-based stop alternative: $432.62 (current - 2×ATR, tighter)
+
+Position Sizing: Account equity not provided, position sizing skipped.
+
+== Phase 5: Final Verdict ==
+
+综合裁决分析 (LLM Override Assessment):
+
+1. 社媒是否在放大/提前反映事件？
+   - TSLA: 高度放大。Elon 的推文 14.5M views, 43K likes。WSB/Reddit 多帖讨论。
+     但社媒情绪数据库无量化分数，无法精确衡量。社媒方向明确看多。
+   - SNPS: 中等放大。WSB 和 r/stocks 有提及但不是热门话题。Elliott 的动作
+     更多是机构投资者关注，散户热度有限。
+
+2. 新闻催化剂是否真实、具体、且未被定价？
+   - TSLA TERAFAB: 真实（多家主流媒体确认），但具体性存疑——$20-25B 成本未纳入
+     2026 CapEx 计划，无施工时间表，无产出时间线。Musk 有过度承诺历史。
+     属于"愿景级"公告而非"执行级"公告。完全未定价（周六事件）。
+   - SNPS Elliott: 非常真实且具体。WSJ 首发，Reuters/Bloomberg/CNBC 确认。
+     Elliott 是全球最活跃的激进投资者之一，有明确的论点（提升 IP 段利润率对标 CDNS）。
+     Jesse Cohn 亲自表态。完全未定价（周末报道）。
+
+3. 量化结构是否支持立刻交易？
+   - 两只股票 entry_signal 都在 WAIT 区间（TSLA +1, SNPS -5）。
+   - 但关键看多信号非常强：RSI 严重超卖（TSLA 18.1, SNPS 25.4）+ 多重底背离
+     （RSI/CCI/MFI 底背离共振）+ SuperTrend 依然看多。
+   - 量化不支持"立刻交易"——它说等待信号一致。但超卖 + 底背离 + 催化剂
+     的组合在历史上是高胜率反弹setup。
+   - 风险：已经 gap up 3%+，买入价高于周五收盘，止损距离较大。
+
+4. 三者冲突时，哪个维度主导？
+   - 社媒和新闻同向看多，量化方向中性偏空（WAIT）。
+   - 对于 SNPS：新闻维度应主导。Elliott 激进持仓是最硬的催化剂类型之一，
+     有明确的价值解锁路径，且 SNPS 的超卖状态为反弹提供了额外燃料。
+     即使量化说 WAIT，Elliott 的介入改变了基本面博弈。
+   - 对于 TSLA：新闻质量较弱（愿景 vs 执行），且 TSLA 的涨幅中包含
+     市场整体 Iran-relief 反弹成分，难以分离 TERAFAB 独立贡献。
+     量化的 WAIT 更应被尊重。
+
+ACTIONABLE:
+  SNPS | LONG | Confidence: MED
+    Catalyst: Elliott multibillion-dollar activist stake, pushing margin improvement to match CDNS
+    Social Score: unavailable
+    Data As Of ET: 2026-03-23 ~10:15 ET
+    Price Source: sentiment.db.stock_price_bars (1m)
+    Entry: $434.13 (current) | Stop: $419.00 (structure, Friday low) | Target: $450.00
+    News Score: strong (WSJ/Reuters/Bloomberg/CNBC confirmed, Jesse Cohn on record)
+    Quant Score: -5/100 (WAIT)
+    Why It Is Actionable: Elliott activist plays have a well-documented track record of
+      driving sustained multi-day/week appreciation. The thesis is specific (IP segment margin
+      fix, match CDNS profitability) and achievable. SNPS is extremely oversold (Williams%R -100,
+      CCI -227, RSI 25 with bottom divergence) providing favorable mean-reversion tailwind.
+      MFI bottom divergence confirms smart money accumulation beginning. CMF trend rising
+      strongly suggests distribution phase ending. The 3.3% gap-up is modest for an Elliott
+      activist event — these typically drive 5-15% moves over the first week.
+      Combined: strong fundamental catalyst + extreme oversold + early accumulation signals.
+    Risk: Gap-up already consumed initial move; broader market vulnerable to Iran reversal
+      (Iran denied ceasefire); SNPS below VWAP and Keltner lower band = weak structure.
+      If Iran situation deteriorates, broad market selloff could overwhelm stock-specific catalyst.
+    Override Reason: LLM overrides WAIT because Elliott activist stake is a category-defining
+      catalyst that changes the fundamental thesis. Quant's WAIT reflects pre-catalyst technical
+      weakness, not post-catalyst reality.
+
+WATCH (not actionable yet):
+  TSLA | LONG | Confidence: LOW
+    Catalyst: TERAFAB $20-25B chip mega-factory announcement (Saturday)
+    Social Score: unavailable
+    News Score: strong (multiple mainstream outlets confirmed)
+    Quant Score: +1/100 (WAIT)
+    Data As Of ET: 2026-03-23 ~10:14 ET
+    Price Source: sentiment.db.stock_price_bars (1m)
+    Reason to Watch: TERAFAB is a massive vision announcement but lacks execution specifics.
+      $20-25B cost not in 2026 CapEx. No construction timeline. Musk overpromise history.
+      TSLA's 3.1% gap-up partly reflects broad market Iran-relief rally (+2% QQQ), so
+      TERAFAB-specific premium is only ~1%. RSI 18.1 with bottom divergence is compelling
+      for mean-reversion, but entry after gap-up increases risk. If TSLA breaks above
+      today's high ($385.33) on volume, could become ACTIONABLE.
+    Trigger to Act: Break above $385 with volume, or pullback to $375 (VWAP area) support hold.
+
+SKIP:
+  UBER | Already priced (deal announced Wed 3/19 during market hours)
+    Social Score: unavailable
+    News Score: strong
+    Quant Score: unavailable (not analyzed)
+    Data As Of ET: N/A
+    Price Source: none
+
+  MU | Already priced (earnings Fri 3/20 during market hours, stock dropped 5%)
+    Social Score: unavailable
+    News Score: strong
+    Quant Score: unavailable (not analyzed)
+    Data As Of ET: N/A
+    Price Source: none

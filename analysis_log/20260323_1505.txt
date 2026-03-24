@@ -1,0 +1,37 @@
+=== SWING SCOUT REPORT ===
+Date: 2026-03-23
+Generated Local: 2026-03-23 15:05 PDT
+Generated ET: 2026-03-23 18:05 ET
+LAST_CLOSE_ET: 2026-03-23 16:00 ET
+LAST_CLOSE_UNIX: 1774296000
+Social Data Source: cli/social_media_cli.py --minutes 1440
+News Verification Source: browser-use manual article verification
+Price Data Source: sentiment.db.stock_price_bars
+
+== Phase 1: Social Media Scan ==
+
+[TSLA] Elon/Tesla ecosystem posts around TERAFAB and Tesla Semi kept retail attention elevated, but the signal was mostly promotional rather than clearly new. | bullish
+  - Multiple X posts amplified TERAFAB, Grok, and a Tesla Semi redesign video; useful only if a mainstream post-close catalyst exists.
+
+[MU] Reddit pushed a "HBM4 2026 capacity sold out" narrative that could support a short-term continuation trade if the claim was newly confirmed after the close. | bullish
+  - The Micron thread was explicit and ticker-specific, but timing looked pre-open and needs verification.
+
+[SNPS] Social chatter flagged a reported Elliott activist stake in Synopsys, which is a valid event-driven setup if the report was new after the bell. | bullish
+  - The source surfaced via a Reuters-linked Reddit post, but the discussion appeared during regular market hours.
+
+[UBER] Robotaxi partnership follow-up chatter kept Uber on the list, although the underlying Rivian deal looked like a recap of a previously announced transaction. | mildly bullish
+  - UBER qualifies as an index member; RIVN was mentioned but filtered out because it is not in the local S&P 500 / Nasdaq 100 universe.
+
+[VLO] Oil and Hormuz discussion created a possible downstream energy angle, with Valero the only index constituent explicitly named in the social stream. | controversial
+  - The thesis depended on geopolitics and crude-routing commentary rather than a confirmed company-specific headline.
+
+Skipped Non-Constituents:
+  - RIVN
+  - SM
+
+Search Plan:
+  1. Verify whether any mainstream Tesla article tied to TERAFAB or Tesla Semi was published after 2026-03-23 16:00 ET and whether it creates a fresh TSLA catalyst.
+  2. Verify the timing and source of the Micron HBM4 sold-out claim, and reject it if the confirmation happened before the market close.
+  3. Verify the reported Elliott stake in Synopsys, including whether the first mainstream report hit during regular trading hours.
+  4. Verify whether Uber-Rivian robotaxi coverage after the close contains any new economic detail beyond last week's deal announcement.
+  5. Verify whether post-close Iran/oil reporting creates a direct, mainstream-confirmed catalyst for VLO; reject if it stays macro-only.

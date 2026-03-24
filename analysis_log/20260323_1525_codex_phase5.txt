@@ -1,0 +1,52 @@
+== Phase 5: Final Verdict ==
+
+Independent LLM Assessment:
+This screen is anchored to events after 2026-03-23 16:00 ET. For this workflow, freshness and stock-specific transmission matter more than raw narrative strength. A post-close headline can justify overriding a WAIT score only when the catalyst is both unpriced and cleanly mapped to the stock being traded.
+
+Summary Classification:
+  - VLO: WATCH | Confidence: MED
+  - SNPS: SKIP | Confidence: HIGH
+  - No ACTIONABLE symbols in this report.
+
+ACTIONABLE:
+  None.
+
+WATCH (not actionable yet):
+  VLO | LONG bias, but confirmation is still required | Confidence: MED
+    1. Social Amplification:
+      Social Score is unavailable. Social media is reflecting the Iran reversal narrative and the market's disbelief in the earlier peace headline, but it is not strongly amplifying VLO itself. This is macro confirmation, not a stock-led social move.
+    2. News Catalyst:
+      Yes, the catalyst is real, specific, and mostly unpriced for tomorrow's equity open. The CBS post-close update about Iran threatening to mine the entire Persian Gulf is a concrete escalation after the close. The problem is not catalyst quality; the problem is instrument fit. The event is first-order bullish for oil volatility, but VLO is only a second-order expression of that view.
+    3. Quant Structure:
+      No, the quantitative structure does not support immediate execution on its own. Entry Signal is -4/100, trend structure is mixed, and CHOP at 62.5 says the close was still a noisy range market. The helpful pieces are extreme oversold readings and strong CMF accumulation, which support a reversal watch, not a blind overnight buy.
+    4. Dominant Dimension:
+      News should dominate the freshness question because the catalyst happened after 16:00 ET and the quant snapshot is pre-event by definition. But stock-specific transmission still matters. That is why news is strong enough to keep VLO on the list, yet not strong enough to force an ACTIONABLE verdict through a conflicted close.
+    Social Score: unavailable
+    News Score: strong
+    Quant Score: -4/100
+    Data As Of ET: 2026-03-23 ~16:00 ET
+    Price Source: sentiment.db.stock_price_bars (1m)
+    Reason to Watch: VLO is the only symbol here with a fresh post-close catalyst that can plausibly change tomorrow's tape. It is also washed out enough to bounce if oil re-prices higher overnight. But the chart closed below VWAP, and VLO is not the cleanest one-hop beneficiary of Gulf-mining risk.
+    Trigger to Act: Reclaim and hold above $237.32 VWAP; stronger confirmation would be a move through $239.50 with oil futures also reversing higher.
+    Why not ACTIONABLE: I am not overriding the WAIT signal here. Fresh news is strong, but the stock-specific path is not clean enough to justify immediate entry without confirmation.
+
+SKIP:
+  SNPS | Elliott catalyst already digested during Monday's regular session; no new post-close trigger | Confidence: HIGH
+    1. Social Amplification:
+      Social Score is unavailable. Retail discussion exists, but it is modest and reflective rather than catalytic. This remains an institutional activist story, not a social-media-driven repricing.
+    2. News Catalyst:
+      The catalyst is real and specific, but it is not unpriced anymore. Elliott's stake was weekend news, Monday already produced a roughly 4% repricing, and no meaningful post-close upgrade, filing, or incremental development was found.
+    3. Quant Structure:
+      The quantitative structure is better than VLO's, but it still does not support immediate event-driven trading. Entry Signal is +31/100, which is close to bullish territory but still WAIT. That is good enough for continuation monitoring, not good enough to re-label tomorrow as a fresh catalyst setup.
+    4. Dominant Dimension:
+      Once the catalyst is already priced, quant should dominate. In that situation, a WAIT score should be respected rather than overridden, because the market has already had a full session to digest the news.
+    Social Score: unavailable
+    News Score: weak for tomorrow (real catalyst, already priced)
+    Quant Score: +31/100
+    Data As Of ET: 2026-03-23 ~16:00 ET
+    Price Source: sentiment.db.stock_price_bars (1m)
+    Reason: SNPS may still have a multi-day activist drift, but that is not the mandate of this screen. This report is about post-close events that can change tomorrow's open, and SNPS does not clear that bar anymore.
+
+Final Call:
+  VLO is the only name worth carrying forward, but only as a confirmation watch.
+  SNPS should be skipped for this specific post-close event-driven setup.
